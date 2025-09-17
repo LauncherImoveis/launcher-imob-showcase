@@ -14,15 +14,283 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      links: {
+        Row: {
+          created_at: string | null
+          id: string
+          property_id: string | null
+          type: Database["public"]["Enums"]["link_type"]
+          url_slug: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          property_id?: string | null
+          type: Database["public"]["Enums"]["link_type"]
+          url_slug: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          property_id?: string | null
+          type?: Database["public"]["Enums"]["link_type"]
+          url_slug?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          credits_purchased: number | null
+          currency: string | null
+          id: string
+          payment_provider: string | null
+          plan_type: Database["public"]["Enums"]["plan_type"] | null
+          status: Database["public"]["Enums"]["payment_status"] | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          credits_purchased?: number | null
+          currency?: string | null
+          id?: string
+          payment_provider?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          credits_purchased?: number | null
+          currency?: string | null
+          id?: string
+          payment_provider?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          credits: number | null
+          custom_logo: string | null
+          email: string
+          id: string
+          name: string
+          phone_number: string | null
+          plan_type: Database["public"]["Enums"]["plan_type"] | null
+          primary_color: string | null
+          profile_picture: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credits?: number | null
+          custom_logo?: string | null
+          email: string
+          id: string
+          name: string
+          phone_number?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          primary_color?: string | null
+          profile_picture?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credits?: number | null
+          custom_logo?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone_number?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"] | null
+          primary_color?: string | null
+          profile_picture?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string
+          area_m2: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string | null
+          description: string
+          garages: number | null
+          id: string
+          is_active: boolean | null
+          neighborhood: string | null
+          price: number
+          slug: string
+          title: string
+          updated_at: string | null
+          user_id: string
+          video_url: string | null
+          whatsapp_number: string
+        }
+        Insert: {
+          address: string
+          area_m2?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          description: string
+          garages?: number | null
+          id?: string
+          is_active?: boolean | null
+          neighborhood?: string | null
+          price: number
+          slug: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+          video_url?: string | null
+          whatsapp_number: string
+        }
+        Update: {
+          address?: string
+          area_m2?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          description?: string
+          garages?: number | null
+          id?: string
+          is_active?: boolean | null
+          neighborhood?: string | null
+          price?: number
+          slug?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string | null
+          whatsapp_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          is_cover: boolean | null
+          property_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_cover?: boolean | null
+          property_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_cover?: boolean | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_images_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_property_slug: {
+        Args: { title: string; user_id: string }
+        Returns: string
+      }
     }
     Enums: {
+      link_type: "property" | "portal"
+      payment_status: "pending" | "paid" | "failed"
+      plan_type: "free" | "credits" | "pro"
       property_status: "ativo" | "inativo"
     }
     CompositeTypes: {
@@ -151,6 +419,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      link_type: ["property", "portal"],
+      payment_status: ["pending", "paid", "failed"],
+      plan_type: ["free", "credits", "pro"],
       property_status: ["ativo", "inativo"],
     },
   },
