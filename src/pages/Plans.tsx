@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { Check, Star, Zap, Crown, CreditCard } from "lucide-react";
+import { Check, Star, Zap, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Plans = () => {
@@ -45,33 +45,7 @@ const Plans = () => {
       buttonText: "Começar Teste Grátis",
       buttonVariant: "default" as const,
       popular: true
-    },
-    {
-      name: "Créditos",
-      price: "A partir de R$ 15",
-      period: "por pacote",
-      description: "Pague apenas pelo que usar",
-      icon: CreditCard,
-      features: [
-        "Sem mensalidade fixa",
-        "Créditos não expiram",
-        "1 crédito = 1 imóvel ativo",
-        "Pacotes de 3, 5, 10, 20 créditos",
-        "Portal personalizado",
-        "Integração WhatsApp",
-        "Suporte por email"
-      ],
-      buttonText: "Ver Pacotes",
-      buttonVariant: "outline" as const,
-      popular: false
     }
-  ];
-
-  const creditPackages = [
-    { credits: 3, price: 15, pricePerCredit: 5 },
-    { credits: 5, price: 22, pricePerCredit: 4.4 },
-    { credits: 10, price: 40, pricePerCredit: 4 },
-    { credits: 20, price: 70, pricePerCredit: 3.5 }
   ];
 
   return (
@@ -93,7 +67,7 @@ const Plans = () => {
       {/* Plans Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {plans.map((plan, index) => (
               <Card key={index} className={`relative text-center ${plan.popular ? 'border-primary shadow-strong scale-105' : ''}`}>
                 {plan.popular && (
@@ -143,45 +117,6 @@ const Plans = () => {
         </div>
       </section>
 
-      {/* Credit Packages Detail */}
-      <section className="py-16 bg-secondary">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Pacotes de Créditos</h2>
-            <p className="text-lg text-muted-foreground">
-              Pague apenas pelos imóveis que você quer manter ativos
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {creditPackages.map((pkg, index) => (
-              <Card key={index} className="text-center hover:shadow-medium transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-2xl">{pkg.credits} Créditos</CardTitle>
-                  <div className="text-3xl font-bold text-primary">
-                    R$ {pkg.price}
-                  </div>
-                  <CardDescription>
-                    R$ {pkg.pricePerCredit.toFixed(2)} por crédito
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link to="/register">Comprar</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <p className="text-sm text-muted-foreground">
-              * Cada crédito permite manter 1 imóvel ativo permanentemente
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
@@ -194,10 +129,6 @@ const Plans = () => {
               {
                 question: "Posso mudar de plano a qualquer momento?",
                 answer: "Sim, você pode fazer upgrade ou downgrade a qualquer momento. As mudanças são efetivadas imediatamente."
-              },
-              {
-                question: "Como funcionam os créditos?",
-                answer: "Cada crédito permite manter 1 imóvel ativo permanentemente. Os créditos não expiram e você pode comprar mais quando precisar."
               },
               {
                 question: "O plano Pro tem período de teste?",
