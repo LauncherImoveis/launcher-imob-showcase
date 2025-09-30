@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+import { useToast } from "@/components/ui/use-toast";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,10 +18,49 @@ const Register = () => {
     confirmPassword: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const schema = z.object({
+    name: z.string().trim().min(2, { message: "Informe seu nome" }).max(100),
+    email: z.string().trim().email({ message: "E-mail inválido" }).max(255),
+    password: z.string().min(6, { message: "Senha deve ter ao menos 6 caracteres" }).max(128),
+    confirmPassword: z.string()
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement registration logic with Supabase
-    console.log("Registration attempt:", formData);
+    const parsed = schema.safeParse(formData);
+    if (!parsed.success) {
+      toast({ title: "Erro", description: parsed.error.issues[0]?.message ?? "Dados inválidos" });
+      return;
+    }
+
+    const redirectUrl = `${window.location.origin}/`;
+    const { error, data } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: { name: formData.name },
+        emailRedirectTo: redirectUrl,
+      },
+    });
+
+    if (error) {
+      toast({ title: "Falha no cadastro", description: error.message });
+      return;
+    }
+
+    if (data.session) {
+      toast({ title: "Conta criada", description: "Redirecionando para o dashboard..." });
+      navigate("/dashboard");
+    } else {
+      toast({ title: "Verifique seu e-mail", description: "Enviamos um link de confirmação." });
+      navigate("/login");
+    }
   };
 
   const handleChange = (field: string, value: string) => {
