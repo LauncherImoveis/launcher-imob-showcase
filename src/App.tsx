@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import PropertyNew from "./pages/PropertyNew";
 import PropertyView from "./pages/PropertyView";
 import Plans from "./pages/Plans";
+import Portal from "./pages/Portal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/new" element={<PropertyNew />} />
           <Route path="/property/:slug" element={<PropertyView />} />
+          <Route path="/portal/:userSlug" element={<Portal />} />
           <Route path="/planos" element={<Plans />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
