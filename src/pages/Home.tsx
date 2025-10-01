@@ -64,7 +64,7 @@ const Home = () => {
               <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                 <div className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Grátis até 3 imóveis</span>
+                  <span>Grátis até 2 imóveis</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
@@ -165,7 +165,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Plan */}
             <Card className="p-8 text-center relative">
               <h3 className="text-2xl font-bold mb-4">Grátis</h3>
@@ -173,7 +173,7 @@ const Home = () => {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center justify-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Até 3 imóveis</span>
+                  <span>Até 2 imóveis</span>
                 </li>
                 <li className="flex items-center justify-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
@@ -190,59 +190,33 @@ const Home = () => {
             </Card>
 
             {/* Pro Plan */}
-            <Card className="p-8 text-center relative border-primary shadow-medium">
+            <Card className="p-8 text-center relative border-primary shadow-medium scale-105">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-primary text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Mais Popular
+                <span className="bg-gradient-primary text-white px-4 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
+                  <Star className="h-4 w-4" />
+                  <span>Mais Popular</span>
                 </span>
               </div>
-              <h3 className="text-2xl font-bold mb-4">Pro</h3>
+              <h3 className="text-2xl font-bold mb-4">PRO</h3>
               <div className="text-4xl font-bold text-primary mb-6">
-                R$ 49<span className="text-lg text-muted-foreground">/mês</span>
+                R$ 37<span className="text-lg text-muted-foreground">/mês</span>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center justify-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Imóveis ilimitados</span>
+                  <span>Até 15 imóveis</span>
                 </li>
                 <li className="flex items-center justify-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Logo personalizada</span>
+                  <span>Portal básico</span>
                 </li>
                 <li className="flex items-center justify-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Cores customizadas</span>
-                </li>
-                <li className="flex items-center justify-center space-x-2">
-                  <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Analytics avançado</span>
+                  <span>WhatsApp integrado</span>
                 </li>
               </ul>
               <Button className="w-full btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
-                <Link to="/register">Começar Teste</Link>
-              </Button>
-            </Card>
-
-            {/* Credits Plan */}
-            <Card className="p-8 text-center relative">
-              <h3 className="text-2xl font-bold mb-4">Créditos</h3>
-              <div className="text-2xl font-bold text-primary mb-6">A partir de R$ 15</div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center justify-center space-x-2">
-                  <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Pague por imóvel</span>
-                </li>
-                <li className="flex items-center justify-center space-x-2">
-                  <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Sem mensalidade</span>
-                </li>
-                <li className="flex items-center justify-center space-x-2">
-                  <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Créditos não expiram</span>
-                </li>
-              </ul>
-              <Button variant="outline" className="w-full" asChild>
-                <Link to="/planos">Ver Planos</Link>
+                <Link to="/planos">Assinar Plano PRO</Link>
               </Button>
             </Card>
           </div>
