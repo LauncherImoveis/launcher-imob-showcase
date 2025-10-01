@@ -43,6 +43,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkAuth();
+    
+    // Check subscription status periodically
+    const interval = setInterval(checkSubscription, 60000); // Every 60 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   const checkAuth = async () => {
@@ -51,7 +56,56 @@ const Dashboard = () => {
       navigate("/login");
       return;
     }
+    await checkSubscription();
     loadDashboardData(user.id);
+  };
+
+  const checkSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      
+      if (error) throw error;
+      
+      console.log('Subscription status:', data);
+    } catch (error: any) {
+      console.error('Error checking subscription:', error);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout');
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao processar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao processar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const loadDashboardData = async (userId: string) => {
@@ -177,13 +231,13 @@ const Dashboard = () => {
 
   const getPlanLabel = () => {
     if (!profile) return "Grátis";
-    if (profile.plan_type === "free") return `Grátis (${metrics.activeProperties}/${getPlanLimit()} imóveis)`;
+    if (profile.plan_type === "free") return `Grátis (${metrics.activeProperties}/2 imóveis)`;
     if (profile.plan_type === "pro") return `Pro (${metrics.activeProperties}/15 imóveis)`;
-    return `Créditos (${profile.credits} disponíveis)`;
+    return "Grátis";
   };
 
   const isNearLimit = () => {
-    if (!profile || profile.plan_type === "credits") return false;
+    if (!profile) return false;
     const limit = getPlanLimit();
     return metrics.activeProperties >= limit - 1;
   };
@@ -217,9 +271,15 @@ const Dashboard = () => {
 
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">Plano: {getPlanLabel()}</span>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/planos">Upgrade</Link>
-              </Button>
+              {profile?.plan_type === 'free' ? (
+                <Button variant="outline" size="sm" onClick={handleUpgrade}>
+                  Upgrade para PRO
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={handleManageSubscription}>
+                  Gerenciar Assinatura
+                </Button>
+              )}
               <Button 
                 variant="ghost" 
                 size="sm"

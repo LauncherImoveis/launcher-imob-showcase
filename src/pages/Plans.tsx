@@ -3,9 +3,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Check, Star, Zap, Crown } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 const Plans = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  useEffect(() => {
+    checkAuth();
+  }, []);
+  
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setIsLoggedIn(!!user);
+  };
+  
+  const handleUpgrade = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      navigate("/register");
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout');
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao processar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
   const plans = [
     {
       name: "Grátis",
@@ -14,35 +54,26 @@ const Plans = () => {
       description: "Perfeito para começar",
       icon: Zap,
       features: [
-        "Até 3 imóveis ativos",
-        "Portal básico personalizado",
-        "Páginas individuais de imóveis",
-        "Integração WhatsApp",
-        "Upload de fotos",
-        "Suporte por email"
+        "Até 2 imóveis cadastrados",
+        "Portal básico",
+        "WhatsApp integrado"
       ],
       buttonText: "Começar Grátis",
       buttonVariant: "outline" as const,
       popular: false
     },
     {
-      name: "Pro",
-      price: "R$ 49",
+      name: "PRO",
+      price: "R$ 37",
       period: "/mês",
       description: "Para corretores profissionais",
       icon: Crown,
       features: [
-        "Imóveis ilimitados",
-        "Logo personalizada",
-        "Cores customizadas",
-        "Analytics avançado",
-        "Relatórios mensais",
-        "Suporte prioritário",
-        "Integração com Google Maps",
-        "Vídeos nos imóveis",
-        "SEO otimizado"
+        "Até 15 imóveis cadastrados",
+        "Portal básico",
+        "WhatsApp integrado"
       ],
-      buttonText: "Começar Teste Grátis",
+      buttonText: "Assinar Plano PRO",
       buttonVariant: "default" as const,
       popular: true
     }
@@ -106,9 +137,15 @@ const Plans = () => {
                   <Button 
                     variant={plan.buttonVariant}
                     className={`w-full btn-animated ${plan.popular ? 'bg-gradient-primary hover:bg-primary-hover' : ''}`}
-                    asChild
+                    onClick={() => {
+                      if (plan.name === "PRO") {
+                        handleUpgrade();
+                      } else {
+                        navigate("/register");
+                      }
+                    }}
                   >
-                    <Link to="/register">{plan.buttonText}</Link>
+                    {plan.buttonText}
                   </Button>
                 </CardContent>
               </Card>
@@ -125,20 +162,20 @@ const Plans = () => {
           </div>
 
           <div className="max-w-3xl mx-auto space-y-6">
-            {[
-              {
-                question: "Posso mudar de plano a qualquer momento?",
-                answer: "Sim, você pode fazer upgrade ou downgrade a qualquer momento. As mudanças são efetivadas imediatamente."
-              },
-              {
-                question: "O plano Pro tem período de teste?",
-                answer: "Sim, oferecemos 14 dias grátis do plano Pro para você testar todos os recursos premium."
-              },
-              {
-                question: "Posso cancelar minha assinatura?",
-                answer: "Sim, você pode cancelar a qualquer momento. Não há multas ou taxas de cancelamento."
-              }
-            ].map((faq, index) => (
+              {[
+                {
+                  question: "Posso mudar de plano a qualquer momento?",
+                  answer: "Sim, você pode fazer upgrade do plano Grátis para o PRO a qualquer momento. O downgrade pode ser feito cancelando a assinatura."
+                },
+                {
+                  question: "Como funciona o pagamento?",
+                  answer: "Utilizamos o Stripe, uma das plataformas de pagamento mais seguras do mundo. A cobrança é mensal e recorrente."
+                },
+                {
+                  question: "Posso cancelar minha assinatura?",
+                  answer: "Sim, você pode cancelar a qualquer momento através do painel de gerenciamento de assinatura. Não há multas ou taxas de cancelamento."
+                }
+              ].map((faq, index) => (
               <Card key={index}>
                 <CardHeader>
                   <CardTitle className="text-lg">{faq.question}</CardTitle>
