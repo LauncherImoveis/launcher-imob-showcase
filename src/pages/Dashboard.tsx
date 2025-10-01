@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Building2, Eye, Edit, Trash2, ExternalLink, Users, TrendingUp, MapPin } from "lucide-react";
+import { Plus, Building2, Eye, Edit, Trash2, ExternalLink, Users, TrendingUp, MapPin, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -168,17 +169,23 @@ const Dashboard = () => {
   };
 
   const getPlanLimit = () => {
-    if (!profile) return 3;
-    if (profile.plan_type === "free") return 3;
-    if (profile.plan_type === "pro") return "∞";
+    if (!profile) return 2;
+    if (profile.plan_type === "free") return 2;
+    if (profile.plan_type === "pro") return 15;
     return profile.credits;
   };
 
   const getPlanLabel = () => {
     if (!profile) return "Grátis";
     if (profile.plan_type === "free") return `Grátis (${metrics.activeProperties}/${getPlanLimit()} imóveis)`;
-    if (profile.plan_type === "pro") return "Pro (ilimitado)";
+    if (profile.plan_type === "pro") return `Pro (${metrics.activeProperties}/15 imóveis)`;
     return `Créditos (${profile.credits} disponíveis)`;
+  };
+
+  const isNearLimit = () => {
+    if (!profile || profile.plan_type === "credits") return false;
+    const limit = getPlanLimit();
+    return metrics.activeProperties >= limit - 1;
   };
 
   if (loading) {
@@ -229,6 +236,21 @@ const Dashboard = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Plan Limit Warning */}
+        {isNearLimit() && (
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Atenção: Limite de imóveis</AlertTitle>
+            <AlertDescription>
+              Você está usando {metrics.activeProperties} de {getPlanLimit()} imóveis disponíveis no seu plano {profile?.plan_type === 'free' ? 'gratuito' : 'Pro'}. 
+              {profile?.plan_type === 'free' && (
+                <> <Link to="/planos" className="underline font-medium">Faça upgrade</Link> para adicionar mais imóveis.</>
+              )}
+              {profile?.plan_type === 'pro' && " Você atingirá o limite em breve."}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -337,8 +359,8 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Button size="sm" variant="outline" className="flex-1" asChild>
-                      <Link to={`/portal/${profile?.name?.toLowerCase().replace(/\s+/g, "-")}/${property.slug}`}>
+                     <Button size="sm" variant="outline" className="flex-1" asChild>
+                      <Link to={`/property/${property.slug}`}>
                         <Eye className="h-4 w-4 mr-1" />
                         Ver
                       </Link>

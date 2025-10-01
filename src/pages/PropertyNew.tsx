@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Building2, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ImageUpload } from "@/components/property/ImageUpload";
 
 const PropertyNew = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const PropertyNew = () => {
     whatsapp_number: "",
     video_url: "",
   });
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -81,6 +83,24 @@ const PropertyNew = () => {
         .single();
 
       if (error) throw error;
+
+      // Save property images
+      if (imageUrls.length > 0 && data) {
+        const imageInserts = imageUrls.map((url, index) => ({
+          property_id: data.id,
+          image_url: url,
+          is_cover: index === 0, // First image is cover
+        }));
+
+        const { error: imagesError } = await supabase
+          .from("property_images")
+          .insert(imageInserts);
+
+        if (imagesError) {
+          console.error("Error saving images:", imagesError);
+          // Don't throw - property was created successfully
+        }
+      }
 
       toast({
         title: "Imóvel criado com sucesso!",
@@ -263,6 +283,17 @@ const PropertyNew = () => {
                   onChange={(e) => handleChange("video_url", e.target.value)}
                   placeholder="https://youtube.com/watch?v=..."
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fotos do Imóvel</Label>
+                <ImageUpload
+                  onImagesUploaded={setImageUrls}
+                  existingImages={imageUrls}
+                />
+                <p className="text-xs text-muted-foreground">
+                  A primeira foto será a capa do imóvel. Máximo 5MB por imagem.
+                </p>
               </div>
 
               <Button
