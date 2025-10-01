@@ -126,6 +126,7 @@ const Dashboard = () => {
         .from("properties")
         .select("*")
         .eq("user_id", userId)
+        .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (propertiesError) throw propertiesError;
