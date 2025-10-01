@@ -20,6 +20,7 @@ interface Property {
   slug: string;
   views?: number;
   leads?: number;
+  image_url?: string;
 }
 
 interface Profile {
@@ -144,10 +145,20 @@ const Dashboard = () => {
             .select("*", { count: "exact", head: true })
             .eq("property_id", property.id);
 
+          // Get first image
+          const { data: imageData } = await supabase
+            .from("property_images")
+            .select("image_url")
+            .eq("property_id", property.id)
+            .order("is_cover", { ascending: false })
+            .limit(1)
+            .single();
+
           return {
             ...property,
             views: viewsCount || 0,
             leads: leadsCount || 0,
+            image_url: imageData?.image_url,
           };
         })
       );
@@ -388,7 +399,15 @@ const Dashboard = () => {
             {properties.map((property) => (
               <Card key={property.id} className="overflow-hidden hover:shadow-medium transition-shadow">
                 <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-primary/5 relative flex items-center justify-center">
-                  <Building2 className="h-16 w-16 text-primary/20" />
+                  {property.image_url ? (
+                    <img 
+                      src={property.image_url} 
+                      alt={property.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Building2 className="h-16 w-16 text-primary/20" />
+                  )}
                   <div className="absolute top-3 right-3 bg-white rounded-full px-3 py-1 text-sm font-semibold shadow-medium">
                     R$ {property.price.toLocaleString("pt-BR")}
                   </div>
