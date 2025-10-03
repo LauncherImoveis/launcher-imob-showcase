@@ -254,6 +254,12 @@ const Dashboard = () => {
     return metrics.activeProperties >= limit - 1;
   };
 
+  const isAtLimit = () => {
+    if (!profile) return false;
+    const limit = getPlanLimit();
+    return metrics.activeProperties >= limit;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-secondary flex items-center justify-center">
@@ -385,11 +391,31 @@ const Dashboard = () => {
                 <span>Ver Meu Portal</span>
               </Link>
             </Button>
-            <Button className="btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
-              <Link to="/dashboard/new" className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Novo Imóvel</span>
-              </Link>
+            <Button 
+              className="btn-animated bg-gradient-primary hover:bg-primary-hover" 
+              asChild={!isAtLimit()}
+              disabled={isAtLimit()}
+              onClick={isAtLimit() ? () => {
+                toast({
+                  title: "Limite atingido",
+                  description: profile?.plan_type === 'free' 
+                    ? "Você atingiu o limite de 2 imóveis no plano gratuito. Faça upgrade para adicionar mais imóveis."
+                    : "Você atingiu o limite de imóveis do seu plano.",
+                  variant: "destructive",
+                });
+              } : undefined}
+            >
+              {!isAtLimit() ? (
+                <Link to="/dashboard/new" className="flex items-center space-x-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Novo Imóvel</span>
+                </Link>
+              ) : (
+                <span className="flex items-center space-x-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Novo Imóvel</span>
+                </span>
+              )}
             </Button>
           </div>
         </div>

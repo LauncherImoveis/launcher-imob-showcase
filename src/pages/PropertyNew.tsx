@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ const PropertyNew = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [checkingLimit, setCheckingLimit] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
     address: "",
@@ -29,6 +30,39 @@ const PropertyNew = () => {
     video_url: "",
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+
+  // Check if user can create a property on mount
+  useEffect(() => {
+    const checkLimit = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('validate-property-limit');
+        
+        if (error) throw error;
+        
+        if (!data.canCreate) {
+          toast({
+            title: "Limite atingido",
+            description: data.plan_type === 'free' 
+              ? `Você atingiu o limite de ${data.limit} imóveis no plano gratuito. Faça upgrade para adicionar mais.`
+              : `Você atingiu o limite de ${data.limit} imóveis do seu plano.`,
+            variant: "destructive",
+          });
+          navigate("/dashboard");
+        }
+      } catch (error: any) {
+        console.error("Error checking limit:", error);
+        toast({
+          title: "Erro ao verificar limite",
+          description: "Não foi possível verificar o limite de imóveis.",
+          variant: "destructive",
+        });
+      } finally {
+        setCheckingLimit(false);
+      }
+    };
+
+    checkLimit();
+  }, [navigate, toast]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -47,6 +81,23 @@ const PropertyNew = () => {
           variant: "destructive",
         });
         navigate("/login");
+        return;
+      }
+
+      // Double-check limit before creating
+      const { data: limitData, error: limitError } = await supabase.functions.invoke('validate-property-limit');
+      
+      if (limitError) throw limitError;
+      
+      if (!limitData.canCreate) {
+        toast({
+          title: "Limite atingido",
+          description: limitData.plan_type === 'free' 
+            ? `Você atingiu o limite de ${limitData.limit} imóveis no plano gratuito.`
+            : `Você atingiu o limite de ${limitData.limit} imóveis do seu plano.`,
+          variant: "destructive",
+        });
+        navigate("/dashboard");
         return;
       }
 
@@ -119,6 +170,17 @@ const PropertyNew = () => {
       setLoading(false);
     }
   };
+
+  if (checkingLimit) {
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-primary animate-pulse mx-auto mb-4" />
+          <p className="text-muted-foreground">Verificando limites...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary">

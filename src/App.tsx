@@ -14,6 +14,8 @@ import PropertyEdit from "./pages/PropertyEdit";
 import PropertyView from "./pages/PropertyView";
 import Plans from "./pages/Plans";
 import Portal from "./pages/Portal";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutCancel from "./pages/CheckoutCancel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
           <Route path="/property/:slug" element={<PropertyView />} />
           <Route path="/portal/:userSlug" element={<Portal />} />
           <Route path="/planos" element={<Plans />} />
+          <Route path="/success" element={<CheckoutSuccess />} />
+          <Route path="/cancel" element={<CheckoutCancel />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
