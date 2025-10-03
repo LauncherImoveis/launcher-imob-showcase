@@ -16,6 +16,7 @@ import Plans from "./pages/Plans";
 import Portal from "./pages/Portal";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
+import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/planos" element={<Plans />} />
           <Route path="/success" element={<CheckoutSuccess />} />
           <Route path="/cancel" element={<CheckoutCancel />} />
+          <Route path="/subscription" element={<Subscription />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -289,15 +289,11 @@ const Dashboard = () => {
 
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">Plano: {getPlanLabel()}</span>
-              {profile?.plan_type === 'free' ? (
-                <Button variant="outline" size="sm" onClick={handleUpgrade}>
-                  Upgrade para PRO
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" onClick={handleManageSubscription}>
-                  Gerenciar Assinatura
-                </Button>
-              )}
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/subscription">
+                  {profile?.plan_type === 'free' ? 'Planos e Assinatura' : 'Gerenciar Assinatura'}
+                </Link>
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm"

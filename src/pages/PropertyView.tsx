@@ -26,7 +26,9 @@ const PropertyView = () => {
           ),
           profiles (
             name,
-            phone_number
+            phone_number,
+            profile_picture,
+            email
           )
         `)
         .eq("slug", slug)
@@ -244,9 +246,31 @@ const PropertyView = () => {
               </Button>
 
               {property.profiles && (
-                <div className="text-center pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-1">Anunciado por</p>
-                  <p className="font-semibold">{property.profiles.name}</p>
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-3 text-center">Anunciado por</p>
+                  <div className="flex items-center gap-3">
+                    {property.profiles.profile_picture ? (
+                      <img 
+                        src={property.profiles.profile_picture} 
+                        alt={property.profiles.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-semibold text-lg">
+                          {property.profiles.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="font-semibold">{property.profiles.name}</p>
+                      {property.profiles.phone_number && (
+                        <p className="text-sm text-muted-foreground">
+                          {property.profiles.phone_number}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </Card>
