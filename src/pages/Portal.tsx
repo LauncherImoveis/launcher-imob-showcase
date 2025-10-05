@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, MapPin, Bed, Bath, Maximize } from "lucide-react";
+import { Building2, MapPin, Bed, Bath, Maximize, SlidersHorizontal, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Property {
   id: string;
@@ -29,12 +39,28 @@ interface Profile {
 const Portal = () => {
   const { userSlug } = useParams();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
+  
+  // Filter and sort states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [bedrooms, setBedrooms] = useState("");
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   useEffect(() => {
     loadProperties();
   }, [userSlug]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [properties, searchTerm, sortBy, minPrice, maxPrice, bedrooms]);
 
   const loadProperties = async () => {
     try {
@@ -76,12 +102,64 @@ const Portal = () => {
 
       if (propertiesError) throw propertiesError;
       setProperties(propertiesData || []);
+      setFilteredProperties(propertiesData || []);
     } catch (error) {
       console.error("Error loading portal:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  const applyFilters = () => {
+    let filtered = [...properties];
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(p => 
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.address.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Price filters
+    if (minPrice) {
+      filtered = filtered.filter(p => p.price >= Number(minPrice));
+    }
+    if (maxPrice) {
+      filtered = filtered.filter(p => p.price <= Number(maxPrice));
+    }
+
+    // Bedrooms filter
+    if (bedrooms) {
+      filtered = filtered.filter(p => p.bedrooms === Number(bedrooms));
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "newest":
+        // Already sorted by created_at desc from query
+        break;
+      case "price-asc":
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case "area-desc":
+        filtered.sort((a, b) => (b.area_m2 || 0) - (a.area_m2 || 0));
+        break;
+    }
+
+    setFilteredProperties(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProperties = filteredProperties.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -164,15 +242,103 @@ const Portal = () => {
       <div className="container mx-auto px-4 py-12">
         {properties.length > 0 ? (
           <>
+            {/* Header with count */}
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-2">Imóveis Disponíveis</h2>
               <p className="text-muted-foreground">
-                {properties.length} {properties.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}
+                {filteredProperties.length} {filteredProperties.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}
+                {filteredProperties.length !== properties.length && ` de ${properties.length} total`}
               </p>
             </div>
+
+            {/* Filters Section */}
+            <Card className="mb-8 p-6 bg-card shadow-medium">
+              <div className="flex items-center gap-2 mb-4">
+                <SlidersHorizontal className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-lg">Filtros e Ordenação</h3>
+              </div>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Search */}
+                <div className="lg:col-span-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por título ou localização..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                {/* Min Price */}
+                <Input
+                  type="number"
+                  placeholder="Preço mínimo"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                />
+
+                {/* Max Price */}
+                <Input
+                  type="number"
+                  placeholder="Preço máximo"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                />
+
+                {/* Bedrooms */}
+                <Select value={bedrooms} onValueChange={setBedrooms}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Quartos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="1">1 quarto</SelectItem>
+                    <SelectItem value="2">2 quartos</SelectItem>
+                    <SelectItem value="3">3 quartos</SelectItem>
+                    <SelectItem value="4">4+ quartos</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Sort */}
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Mais recentes</SelectItem>
+                    <SelectItem value="price-asc">Menor preço</SelectItem>
+                    <SelectItem value="price-desc">Maior preço</SelectItem>
+                    <SelectItem value="area-desc">Maior área</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Clear Filters */}
+                {(searchTerm || minPrice || maxPrice || bedrooms || sortBy !== "newest") && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchTerm("");
+                      setMinPrice("");
+                      setMaxPrice("");
+                      setBedrooms("");
+                      setSortBy("newest");
+                    }}
+                    className="lg:col-span-5"
+                  >
+                    Limpar Filtros
+                  </Button>
+                )}
+              </div>
+            </Card>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {properties.map((property) => {
+            {/* Properties Grid */}
+            {currentProperties.length > 0 ? (
+              <>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {currentProperties.map((property) => {
                 const coverImage = property.property_images?.find(img => img.is_cover)?.image_url 
                   || property.property_images?.[0]?.image_url;
                 
@@ -254,9 +420,68 @@ const Portal = () => {
                       </Button>
                     </CardContent>
                   </Card>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-12">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
+            ) : (
+              <div className="text-center py-20">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
+                <h2 className="text-3xl font-bold mb-3 text-foreground">Nenhum imóvel encontrado</h2>
+                <p className="text-muted-foreground text-lg max-w-md mx-auto mb-6">
+                  Tente ajustar os filtros para ver mais resultados.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm("");
+                    setMinPrice("");
+                    setMaxPrice("");
+                    setBedrooms("");
+                    setSortBy("newest");
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
+              </div>
+            )}
           </>
         ) : (
           <div className="text-center py-20">

@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DeleteConfirmDialog } from "@/components/property/DeleteConfirmDialog";
 
 interface Property {
   id: string;
@@ -41,6 +42,8 @@ const Dashboard = () => {
     leads: 0,
     conversion: 0,
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -206,28 +209,36 @@ const Dashboard = () => {
     }
   };
 
-  const handleDelete = async (propertyId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este imóvel?")) return;
+  const handleDeleteClick = (propertyId: string, propertyTitle: string) => {
+    setPropertyToDelete({ id: propertyId, title: propertyTitle });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!propertyToDelete) return;
 
     try {
       const { error } = await supabase
         .from("properties")
         .update({ is_active: false })
-        .eq("id", propertyId);
+        .eq("id", propertyToDelete.id);
 
       if (error) throw error;
 
       toast({
-        title: "Imóvel excluído",
-        description: "O imóvel foi desativado com sucesso.",
+        title: "Imóvel desativado",
+        description: "O imóvel foi desativado com sucesso e não aparecerá mais no seu portal.",
       });
+
+      setDeleteDialogOpen(false);
+      setPropertyToDelete(null);
 
       // Reload data
       const { data: { user } } = await supabase.auth.getUser();
       if (user) loadDashboardData(user.id);
     } catch (error: any) {
       toast({
-        title: "Erro ao excluir",
+        title: "Erro ao desativar",
         description: error.message,
         variant: "destructive",
       });
@@ -476,7 +487,8 @@ const Dashboard = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => handleDelete(property.id)}
+                      onClick={() => handleDeleteClick(property.id, property.title)}
+                      className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -507,6 +519,14 @@ const Dashboard = () => {
           </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        propertyTitle={propertyToDelete?.title || ""}
+      />
     </div>
   );
 };
