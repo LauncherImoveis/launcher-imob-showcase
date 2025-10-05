@@ -15,7 +15,8 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    acceptTerms: false
   });
 
   const navigate = useNavigate();
@@ -25,7 +26,10 @@ const Register = () => {
     name: z.string().trim().min(2, { message: "Informe seu nome" }).max(100),
     email: z.string().trim().email({ message: "E-mail inválido" }).max(255),
     password: z.string().min(6, { message: "Senha deve ter ao menos 6 caracteres" }).max(128),
-    confirmPassword: z.string()
+    confirmPassword: z.string(),
+    acceptTerms: z.boolean().refine((val) => val === true, {
+      message: "Você precisa aceitar os termos de uso"
+    })
   }).refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
     path: ["confirmPassword"],
@@ -63,7 +67,7 @@ const Register = () => {
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -162,6 +166,27 @@ const Register = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="acceptTerms"
+                  checked={formData.acceptTerms}
+                  onChange={(e) => handleChange("acceptTerms", e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                  required
+                />
+                <Label htmlFor="acceptTerms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                  Eu aceito os{" "}
+                  <Link to="/termos" target="_blank" className="text-primary hover:underline">
+                    Termos de Uso
+                  </Link>{" "}
+                  e a{" "}
+                  <Link to="/privacidade" target="_blank" className="text-primary hover:underline">
+                    Política de Privacidade
+                  </Link>
+                </Label>
               </div>
 
               <Button type="submit" className="w-full btn-animated bg-gradient-primary hover:bg-primary-hover">

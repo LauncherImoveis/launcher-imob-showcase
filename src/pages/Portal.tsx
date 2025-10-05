@@ -16,13 +16,21 @@ interface Property {
   area_m2: number | null;
   slug: string;
   description: string;
+  property_images?: { image_url: string; is_cover: boolean }[];
+}
+
+interface Profile {
+  name: string;
+  profile_picture: string | null;
+  phone_number: string | null;
+  email: string;
 }
 
 const Portal = () => {
   const { userSlug } = useParams();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("");
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     loadProperties();
@@ -35,7 +43,7 @@ const Portal = () => {
       
       const { data: profiles, error: profileError } = await supabase
         .from("profiles")
-        .select("id, name")
+        .select("id, name, profile_picture, phone_number, email")
         .ilike("name", nameFromSlug);
 
       if (profileError) throw profileError;
@@ -44,14 +52,25 @@ const Portal = () => {
         return;
       }
 
-      const profile = profiles[0];
-      setUserName(profile.name);
+      const userProfile = profiles[0];
+      setProfile({
+        name: userProfile.name,
+        profile_picture: userProfile.profile_picture,
+        phone_number: userProfile.phone_number,
+        email: userProfile.email
+      });
 
-      // Load active properties for this user
+      // Load active properties with images for this user
       const { data: propertiesData, error: propertiesError } = await supabase
         .from("properties")
-        .select("*")
-        .eq("user_id", profile.id)
+        .select(`
+          *,
+          property_images (
+            image_url,
+            is_cover
+          )
+        `)
+        .eq("user_id", userProfile.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
@@ -77,14 +96,40 @@ const Portal = () => {
       {/* Header */}
       <header className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-primary rounded-lg">
-              <Building2 className="h-6 w-6 text-white" />
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              {profile?.profile_picture ? (
+                <img 
+                  src={profile.profile_picture} 
+                  alt={profile.name}
+                  className="h-16 w-16 rounded-full object-cover border-2 border-primary"
+                />
+              ) : (
+                <div className="h-16 w-16 rounded-full bg-gradient-primary flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">
+                    {profile?.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold">{profile?.name}</h1>
+                <p className="text-sm text-muted-foreground">Corretor de Imóveis</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">{userName}</h1>
-              <p className="text-sm text-muted-foreground">Imóveis Disponíveis</p>
-            </div>
+            
+            {profile?.phone_number && (
+              <div className="flex flex-col items-start md:items-end gap-1">
+                <p className="text-sm text-muted-foreground">Entre em contato:</p>
+                <a 
+                  href={`https://wa.me/${profile.phone_number.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-medium flex items-center gap-1"
+                >
+                  <span>📱 {profile.phone_number}</span>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -93,14 +138,28 @@ const Portal = () => {
       <div className="container mx-auto px-4 py-8">
         {properties.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-all">
-                <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-primary/5 relative flex items-center justify-center">
-                  <Building2 className="h-16 w-16 text-primary/20" />
-                  <div className="absolute top-3 right-3 bg-card rounded-full px-3 py-1 text-sm font-semibold shadow-lg">
-                    R$ {property.price.toLocaleString("pt-BR")}
+            {properties.map((property) => {
+              const coverImage = property.property_images?.find(img => img.is_cover)?.image_url 
+                || property.property_images?.[0]?.image_url;
+              
+              return (
+                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-all">
+                  <div className="aspect-[4/3] relative overflow-hidden">
+                    {coverImage ? (
+                      <img 
+                        src={coverImage} 
+                        alt={property.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                        <Building2 className="h-16 w-16 text-primary/20" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3 bg-card rounded-full px-3 py-1 text-sm font-semibold shadow-lg">
+                      R$ {property.price.toLocaleString("pt-BR")}
+                    </div>
                   </div>
-                </div>
                 
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">{property.title}</h3>
@@ -138,7 +197,8 @@ const Portal = () => {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
+            );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">

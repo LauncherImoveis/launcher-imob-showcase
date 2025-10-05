@@ -45,10 +45,10 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/suporte"
+                  to="/faq"
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Suporte
+                  FAQ
                 </Link>
               </li>
             </ul>
