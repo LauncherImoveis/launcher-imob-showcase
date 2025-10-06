@@ -131,7 +131,7 @@ const Portal = () => {
     }
 
     // Bedrooms filter
-    if (bedrooms) {
+    if (bedrooms && bedrooms !== "all") {
       filtered = filtered.filter(p => p.bedrooms === Number(bedrooms));
     }
 
@@ -294,7 +294,7 @@ const Portal = () => {
                     <SelectValue placeholder="Quartos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="1">1 quarto</SelectItem>
                     <SelectItem value="2">2 quartos</SelectItem>
                     <SelectItem value="3">3 quartos</SelectItem>
@@ -316,14 +316,14 @@ const Portal = () => {
                 </Select>
 
                 {/* Clear Filters */}
-                {(searchTerm || minPrice || maxPrice || bedrooms || sortBy !== "newest") && (
+                {(searchTerm || minPrice || maxPrice || (bedrooms && bedrooms !== "all") || sortBy !== "newest") && (
                   <Button 
                     variant="outline" 
                     onClick={() => {
                       setSearchTerm("");
                       setMinPrice("");
                       setMaxPrice("");
-                      setBedrooms("");
+                      setBedrooms("all");
                       setSortBy("newest");
                     }}
                     className="lg:col-span-5"
@@ -474,7 +474,7 @@ const Portal = () => {
                     setSearchTerm("");
                     setMinPrice("");
                     setMaxPrice("");
-                    setBedrooms("");
+                    setBedrooms("all");
                     setSortBy("newest");
                   }}
                 >
