@@ -58,6 +58,15 @@ const Register = () => {
       return;
     }
 
+    // Send welcome email
+    try {
+      await supabase.functions.invoke('send-welcome-email', {
+        body: { name: formData.name, email: formData.email }
+      });
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+    }
+
     if (data.session) {
       toast({ title: "Conta criada", description: "Redirecionando para o dashboard..." });
       navigate("/dashboard");

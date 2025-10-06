@@ -85,6 +85,19 @@ const PropertyView = () => {
         contact_phone: phone,
         message: `Interesse via WhatsApp`,
       });
+
+      // Send lead notification email to property owner
+      if (property.profiles?.email) {
+        await supabase.functions.invoke('send-lead-notification', {
+          body: {
+            agentEmail: property.profiles.email,
+            agentName: property.profiles.name,
+            propertyTitle: property.title,
+            propertyUrl: window.location.href,
+            leadPhone: phone
+          }
+        });
+      }
     } catch (error) {
       console.error("Error recording lead:", error);
     }

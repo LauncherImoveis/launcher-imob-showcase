@@ -21,6 +21,24 @@ const CheckoutSuccess = () => {
         if (error) throw error;
         
         setSubscriptionData(data);
+
+        // Send payment confirmation email
+        if (data?.subscribed) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user?.email) {
+              await supabase.functions.invoke('send-payment-confirmation', {
+                body: { 
+                  email: user.email,
+                  plan: 'PRO',
+                  amount: 'R$ 47,00'
+                }
+              });
+            }
+          } catch (emailError) {
+            console.error('Error sending payment confirmation:', emailError);
+          }
+        }
       } catch (error: any) {
         console.error('Error verifying subscription:', error);
       } finally {
