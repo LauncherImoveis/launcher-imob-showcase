@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Helmet } from "react-helmet";
 import {
   Pagination,
   PaginationContent,
@@ -53,6 +54,14 @@ const Portal = () => {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+
+  // SEO: Update meta tags
+  useEffect(() => {
+    if (profile) {
+      const title = `${profile.name} - Portal de Imóveis | Launcher.imóveis`;
+      document.title = title;
+    }
+  }, [profile]);
 
   useEffect(() => {
     loadProperties();
@@ -170,7 +179,35 @@ const Portal = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30">
+    <>
+      {profile && (
+        <Helmet>
+          <title>{profile.name} - Portal de Imóveis | Launcher.imóveis</title>
+          <meta name="description" content={`Confira os imóveis disponíveis com ${profile.name}. Encontre sua casa dos sonhos!`} />
+          <meta property="og:title" content={`${profile.name} - Portal de Imóveis`} />
+          <meta property="og:description" content={`Confira os imóveis disponíveis com ${profile.name}. Encontre sua casa dos sonhos!`} />
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={window.location.href} />
+          {profile.profile_picture && <meta property="og:image" content={profile.profile_picture} />}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`${profile.name} - Portal de Imóveis`} />
+          <meta name="twitter:description" content={`Confira os imóveis disponíveis com ${profile.name}. Encontre sua casa dos sonhos!`} />
+          {profile.profile_picture && <meta name="twitter:image" content={profile.profile_picture} />}
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "RealEstateAgent",
+              "name": profile.name,
+              "telephone": profile.phone_number,
+              "email": profile.email,
+              "image": profile.profile_picture,
+              "url": window.location.href
+            })}
+          </script>
+        </Helmet>
+      )}
+      
+      <div className="min-h-screen bg-secondary/30">
       {/* Hero Header with Gradient */}
       <header className="relative bg-gradient-primary text-primary-foreground overflow-hidden">
         {/* Decorative background pattern */}
@@ -519,6 +556,7 @@ const Portal = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

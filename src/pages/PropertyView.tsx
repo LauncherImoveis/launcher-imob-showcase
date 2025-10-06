@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Building2, MapPin, Bed, Bath, Car, Ruler, ArrowLeft, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import { Helmet } from "react-helmet";
 
 const PropertyView = () => {
   const { slug } = useParams();
@@ -39,6 +40,14 @@ const PropertyView = () => {
       return data;
     },
   });
+
+  // SEO: Update meta tags
+  useEffect(() => {
+    if (property) {
+      const title = `${property.title} - ${property.neighborhood || property.address} | Launcher.imóveis`;
+      document.title = title;
+    }
+  }, [property]);
 
   // Record property view
   useEffect(() => {
@@ -112,11 +121,55 @@ const PropertyView = () => {
     );
   }
 
-  const coverImage = property.property_images?.find((img: any) => img.is_cover)?.image_url ||
-    property.property_images?.[0]?.image_url;
+  const coverImage = property?.property_images?.find((img: any) => img.is_cover)?.image_url ||
+    property?.property_images?.[0]?.image_url;
+  const description = property?.description.substring(0, 160) + (property?.description.length > 160 ? '...' : '');
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <>
+      {property && (
+        <Helmet>
+          <title>{property.title} - {property.neighborhood || property.address} | Launcher.imóveis</title>
+          <meta name="description" content={description} />
+          <meta property="og:title" content={`${property.title} - ${property.neighborhood || property.address}`} />
+          <meta property="og:description" content={description} />
+          <meta property="og:type" content="website" />
+          {coverImage && <meta property="og:image" content={coverImage} />}
+          <meta property="og:url" content={window.location.href} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`${property.title} - ${property.neighborhood || property.address}`} />
+          <meta name="twitter:description" content={description} />
+          {coverImage && <meta name="twitter:image" content={coverImage} />}
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "RealEstateListing",
+              "name": property.title,
+              "description": property.description,
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": property.address,
+                "addressLocality": property.neighborhood,
+              },
+              "offers": {
+                "@type": "Offer",
+                "price": property.price,
+                "priceCurrency": "BRL"
+              },
+              "numberOfBedrooms": property.bedrooms,
+              "numberOfBathroomsTotal": property.bathrooms,
+              "floorSize": {
+                "@type": "QuantitativeValue",
+                "value": property.area_m2,
+                "unitCode": "MTK"
+              },
+              "image": property.property_images?.map((img: any) => img.image_url) || []
+            })}
+          </script>
+        </Helmet>
+      )}
+      
+      <div className="min-h-screen bg-secondary">
       {/* Header */}
       <div className="bg-white border-b border-border">
         <div className="container mx-auto px-4 py-4">
@@ -278,6 +331,7 @@ const PropertyView = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
