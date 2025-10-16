@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Helmet } from "react-helmet";
+import { hexToHsl } from "@/lib/colorUtils";
 import {
   Pagination,
   PaginationContent,
@@ -35,6 +36,7 @@ interface Profile {
   profile_picture: string | null;
   phone_number: string | null;
   email: string;
+  primary_color: string | null;
 }
 
 const Portal = () => {
@@ -78,7 +80,7 @@ const Portal = () => {
       
       const { data: profiles, error: profileError } = await supabase
         .from("profiles")
-        .select("id, name, profile_picture, phone_number, email")
+        .select("id, name, profile_picture, phone_number, email, primary_color")
         .ilike("name", nameFromSlug);
 
       if (profileError) throw profileError;
@@ -92,7 +94,8 @@ const Portal = () => {
         name: userProfile.name,
         profile_picture: userProfile.profile_picture,
         phone_number: userProfile.phone_number,
-        email: userProfile.email
+        email: userProfile.email,
+        primary_color: userProfile.primary_color
       });
 
       // Load active properties with images for this user
@@ -178,8 +181,22 @@ const Portal = () => {
     );
   }
 
+  // Apply custom theme if available
+  const customPrimaryColor = profile?.primary_color;
+  const customPrimaryHsl = customPrimaryColor ? hexToHsl(customPrimaryColor) : null;
+
   return (
     <>
+      {/* Apply custom CSS variables for this portal */}
+      {customPrimaryHsl && (
+        <style>{`
+          :root {
+            --primary: ${customPrimaryHsl};
+            --primary-foreground: 0 0% 100%;
+          }
+        `}</style>
+      )}
+      
       {profile && (
         <Helmet>
           <title>{profile.name} - Portal de Imóveis | Launcher.imóveis</title>

@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DeleteConfirmDialog } from "@/components/property/DeleteConfirmDialog";
+import { ThemeCustomizer } from "@/components/theme/ThemeCustomizer";
 
 interface Property {
   id: string;
@@ -391,7 +392,8 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold">Meus Imóveis</h1>
             <p className="text-muted-foreground">Gerencie suas propriedades e vitrines digitais</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-3">
+            <ThemeCustomizer />
             <Button variant="outline" asChild>
               <Link to={`/portal/${profile?.name?.toLowerCase().replace(/\s+/g, "-")}`} className="flex items-center space-x-2">
                 <ExternalLink className="h-4 w-4" />
