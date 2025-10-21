@@ -75,13 +75,11 @@ const Portal = () => {
 
   const loadProperties = async () => {
     try {
-      // Get user by name slug
-      const nameFromSlug = userSlug?.replace(/-/g, " ") || "";
-      
+      // Get user by username slug
       const { data: profiles, error: profileError } = await supabase
         .from("profiles")
         .select("id, name, profile_picture, phone_number, email, primary_color")
-        .ilike("name", nameFromSlug);
+        .eq("username", userSlug);
 
       if (profileError) throw profileError;
       if (!profiles || profiles.length === 0) {

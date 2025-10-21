@@ -27,6 +27,7 @@ interface Property {
 
 interface Profile {
   name: string;
+  username?: string;
   plan_type: string;
   credits: number;
 }
@@ -118,7 +119,7 @@ const Dashboard = () => {
       // Load profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("name, plan_type, credits")
+        .select("name, username, plan_type, credits")
         .eq("id", userId)
         .single();
 
@@ -395,7 +396,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <ThemeCustomizer />
             <Button variant="outline" asChild>
-              <Link to={`/portal/${profile?.name?.toLowerCase().replace(/\s+/g, "-")}`} className="flex items-center space-x-2">
+              <Link to={`/portal/${profile?.username || profile?.name?.toLowerCase().replace(/\s+/g, "-")}`} className="flex items-center space-x-2">
                 <ExternalLink className="h-4 w-4" />
                 <span>Ver Meu Portal</span>
               </Link>

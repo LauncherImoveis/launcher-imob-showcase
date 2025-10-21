@@ -161,6 +161,7 @@ export type Database = {
           primary_color: string | null
           profile_picture: string | null
           updated_at: string | null
+          username: string
         }
         Insert: {
           created_at?: string | null
@@ -174,6 +175,7 @@ export type Database = {
           primary_color?: string | null
           profile_picture?: string | null
           updated_at?: string | null
+          username: string
         }
         Update: {
           created_at?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           primary_color?: string | null
           profile_picture?: string | null
           updated_at?: string | null
+          username?: string
         }
         Relationships: []
       }
