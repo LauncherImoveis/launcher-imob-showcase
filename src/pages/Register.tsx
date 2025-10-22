@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { Building2, Mail, Lock, Eye, EyeOff, User, Phone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -15,6 +15,7 @@ const Register = () => {
     name: "",
     username: "",
     email: "",
+    phone_number: "",
     password: "",
     confirmPassword: "",
     acceptTerms: false
@@ -32,6 +33,11 @@ const Register = () => {
       .max(30, { message: "Username deve ter no máximo 30 caracteres" })
       .regex(/^[a-z0-9-]+$/, { message: "Username deve conter apenas letras minúsculas, números e hífens" }),
     email: z.string().trim().email({ message: "E-mail inválido" }).max(255),
+    phone_number: z.string()
+      .trim()
+      .regex(/^55\d{2}9?\d{8}$/, { 
+        message: "Telefone inválido. Use o formato: 55 + DDD + número (ex: 5511999887766)" 
+      }),
     password: z.string().min(6, { message: "Senha deve ter ao menos 6 caracteres" }).max(128),
     confirmPassword: z.string(),
     acceptTerms: z.boolean().refine((val) => val === true, {
@@ -116,10 +122,13 @@ const Register = () => {
     });
 
     if (!error && data.user) {
-      // Update profile with username
+      // Update profile with username and phone number
       await supabase
         .from("profiles")
-        .update({ username: formData.username.toLowerCase() })
+        .update({ 
+          username: formData.username.toLowerCase(),
+          phone_number: formData.phone_number
+        })
         .eq("id", data.user.id);
     }
 
@@ -242,6 +251,26 @@ const Register = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone_number">WhatsApp</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone_number"
+                    type="tel"
+                    placeholder="5511999887766"
+                    className="pl-10"
+                    value={formData.phone_number}
+                    onChange={(e) => handleChange("phone_number", e.target.value.replace(/\D/g, ''))}
+                    required
+                    maxLength={13}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Formato: 55 + DDD + número (ex: 5511999887766)
+                </p>
               </div>
 
               <div className="space-y-2">
