@@ -110,27 +110,20 @@ const Register = () => {
       return;
     }
 
-    // Update profile with username after signup
+    // Create user account with profile data
     const redirectUrl = `${window.location.origin}/`;
     const { error, data } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
-        data: { name: formData.name },
+        data: { 
+          name: formData.name,
+          username: formData.username.toLowerCase(),
+          phone_number: formData.phone_number
+        },
         emailRedirectTo: redirectUrl,
       },
     });
-
-    if (!error && data.user) {
-      // Update profile with username and phone number
-      await supabase
-        .from("profiles")
-        .update({ 
-          username: formData.username.toLowerCase(),
-          phone_number: formData.phone_number
-        })
-        .eq("id", data.user.id);
-    }
 
     if (error) {
       toast({ title: "Falha no cadastro", description: error.message });

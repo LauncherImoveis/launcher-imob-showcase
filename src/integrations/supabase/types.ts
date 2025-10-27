@@ -297,7 +297,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          ip: unknown | null
+          ip: unknown
           property_id: string | null
           referrer: string | null
           user_agent: string | null
@@ -306,7 +306,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           property_id?: string | null
           referrer?: string | null
           user_agent?: string | null
@@ -315,7 +315,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
-          ip?: unknown | null
+          ip?: unknown
           property_id?: string | null
           referrer?: string | null
           user_agent?: string | null
