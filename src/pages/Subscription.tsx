@@ -6,6 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, CreditCard, Calendar, ExternalLink, ArrowLeft, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Profile {
   name: string;
@@ -35,6 +45,8 @@ const Subscription = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -122,6 +134,36 @@ const Subscription = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setCanceling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-subscription');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Assinatura cancelada",
+        description: "Sua assinatura será cancelada no final do período atual. Você ainda terá acesso aos recursos PRO até lá.",
+      });
+      
+      setShowCancelDialog(false);
+      
+      // Reload subscription data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await loadData(user.id);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -288,14 +330,23 @@ const Subscription = () => {
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button 
-                    onClick={handleManageSubscription}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Gerenciar Assinatura no Stripe
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={() => setShowCancelDialog(true)}
+                      variant="destructive"
+                      className="flex-1"
+                    >
+                      Cancelar Assinatura
+                    </Button>
+                    <Button 
+                      onClick={handleManageSubscription}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Gerenciar no Stripe
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </Button>
+                  </>
                 )}
               </div>
             </CardContent>
@@ -355,6 +406,31 @@ const Subscription = () => {
           </Card>
         </div>
       </div>
+
+      {/* Cancel Subscription Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Assinatura PRO?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sua assinatura será cancelada no final do período atual. Você ainda terá acesso
+              aos recursos PRO até {subscriptionData?.subscription_end ? formatDate(subscriptionData.subscription_end) : 'o fim do período'}.
+              <br /><br />
+              Após o cancelamento, sua conta voltará ao plano Gratuito com limite de 2 imóveis.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={canceling}>Manter Assinatura</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancelSubscription}
+              disabled={canceling}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {canceling ? "Cancelando..." : "Sim, Cancelar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
