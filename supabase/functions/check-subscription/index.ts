@@ -75,7 +75,21 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      logStep("Raw subscription data", { 
+        subscriptionId: subscription.id, 
+        currentPeriodEnd: subscription.current_period_end,
+        status: subscription.status 
+      });
+      
+      // Safely convert the date
+      try {
+        if (subscription.current_period_end) {
+          subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+      } catch (dateError) {
+        logStep("Error converting date, continuing without subscription_end", { error: dateError });
+      }
+      
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
       productId = subscription.items.data[0].price.product;
       logStep("Determined subscription tier", { productId });
