@@ -131,6 +131,9 @@ const Portal = () => {
           :root {
             --primary: ${customPrimaryHsl};
             --primary-foreground: 0 0% 100%;
+            --primary-hover: ${customPrimaryHsl.replace(/(\d+)%\)$/, (match, lightness) => `${Math.max(0, parseInt(lightness) - 5)}%)`)};
+            --gradient-primary: linear-gradient(135deg, hsl(${customPrimaryHsl}), hsl(${customPrimaryHsl.replace(/(\d+)%\)$/, (match, lightness) => `${Math.min(100, parseInt(lightness) + 10)}%)`)}));
+            --gradient-hero: linear-gradient(135deg, hsl(${customPrimaryHsl}), hsl(${customPrimaryHsl.replace(/(\d+)%\)$/, (match, lightness) => `${Math.min(100, parseInt(lightness) + 10)}%)`)}));
           }
         `}</style>
       )}
