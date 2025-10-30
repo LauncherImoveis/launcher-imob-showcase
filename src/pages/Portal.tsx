@@ -51,7 +51,6 @@ const Portal = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [bedrooms, setBedrooms] = useState("");
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,7 +70,7 @@ const Portal = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [properties, searchTerm, sortBy, minPrice, maxPrice, bedrooms]);
+  }, [properties, searchTerm, sortBy, minPrice, maxPrice]);
 
   const loadProperties = async () => {
     try {
@@ -138,11 +137,6 @@ const Portal = () => {
     }
     if (maxPrice) {
       filtered = filtered.filter(p => p.price <= Number(maxPrice));
-    }
-
-    // Bedrooms filter
-    if (bedrooms && bedrooms !== "all") {
-      filtered = filtered.filter(p => p.bedrooms === Number(bedrooms));
     }
 
     // Sort
@@ -310,7 +304,7 @@ const Portal = () => {
                 <h3 className="font-semibold text-lg">Filtros e Ordenação</h3>
               </div>
               
-              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Search */}
                 <div className="lg:col-span-2">
                   <div className="relative">
@@ -340,20 +334,6 @@ const Portal = () => {
                   onChange={(e) => setMaxPrice(e.target.value)}
                 />
 
-                {/* Bedrooms */}
-                <Select value={bedrooms} onValueChange={setBedrooms}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Quartos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="1">1 quarto</SelectItem>
-                    <SelectItem value="2">2 quartos</SelectItem>
-                    <SelectItem value="3">3 quartos</SelectItem>
-                    <SelectItem value="4">4+ quartos</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 {/* Sort */}
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger>
@@ -368,17 +348,16 @@ const Portal = () => {
                 </Select>
 
                 {/* Clear Filters */}
-                {(searchTerm || minPrice || maxPrice || (bedrooms && bedrooms !== "all") || sortBy !== "newest") && (
+                {(searchTerm || minPrice || maxPrice || sortBy !== "newest") && (
                   <Button 
                     variant="outline" 
                     onClick={() => {
                       setSearchTerm("");
                       setMinPrice("");
                       setMaxPrice("");
-                      setBedrooms("all");
                       setSortBy("newest");
                     }}
-                    className="lg:col-span-5"
+                    className="lg:col-span-4"
                   >
                     Limpar Filtros
                   </Button>
@@ -526,7 +505,6 @@ const Portal = () => {
                     setSearchTerm("");
                     setMinPrice("");
                     setMaxPrice("");
-                    setBedrooms("all");
                     setSortBy("newest");
                   }}
                 >
