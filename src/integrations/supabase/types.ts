@@ -14,6 +14,336 @@ export type Database = {
   }
   public: {
     Tables: {
+      crm_activity_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          payload: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_deals: {
+        Row: {
+          closed_at: string | null
+          created_at: string | null
+          expected_close_date: string | null
+          id: string
+          lead_id: string | null
+          probability: number | null
+          property_id: string | null
+          stage_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          probability?: number | null
+          property_id?: string | null
+          stage_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          probability?: number | null
+          property_id?: string | null
+          stage_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_deals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deals_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_interactions: {
+        Row: {
+          attachments: Json | null
+          created_at: string | null
+          deal_id: string | null
+          direction: string | null
+          id: string
+          lead_id: string | null
+          message: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string | null
+          deal_id?: string | null
+          direction?: string | null
+          id?: string
+          lead_id?: string | null
+          message?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string | null
+          deal_id?: string | null
+          direction?: string | null
+          id?: string
+          lead_id?: string | null
+          message?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_interactions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_tags: {
+        Row: {
+          lead_id: string
+          tag_id: string
+        }
+        Insert: {
+          lead_id: string
+          tag_id: string
+        }
+        Update: {
+          lead_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_tags_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "crm_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_reminders: {
+        Row: {
+          created_at: string | null
+          deal_id: string | null
+          id: string
+          is_done: boolean | null
+          lead_id: string | null
+          note: string | null
+          remind_at: string
+          repeat_rule: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          is_done?: boolean | null
+          lead_id?: string | null
+          note?: string | null
+          remind_at: string
+          repeat_rule?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string | null
+          id?: string
+          is_done?: boolean | null
+          lead_id?: string | null
+          note?: string | null
+          remind_at?: string
+          repeat_rule?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_reminders_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_reminders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          default_probability: number | null
+          id: string
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          default_probability?: number | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          default_probability?: number | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_tags: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_transactions: {
+        Row: {
+          amount: number
+          commission_amount: number | null
+          commission_pct: number | null
+          created_at: string | null
+          date: string | null
+          deal_id: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          commission_amount?: number | null
+          commission_pct?: number | null
+          created_at?: string | null
+          date?: string | null
+          deal_id?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          commission_amount?: number | null
+          commission_pct?: number | null
+          created_at?: string | null
+          date?: string | null
+          deal_id?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_transactions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           contact_name: string | null
@@ -383,7 +713,7 @@ export type Database = {
     Enums: {
       link_type: "property" | "portal"
       payment_status: "pending" | "paid" | "failed"
-      plan_type: "free" | "credits" | "pro"
+      plan_type: "free" | "credits" | "pro" | "premium"
       property_status: "ativo" | "inativo"
     }
     CompositeTypes: {
@@ -514,7 +844,7 @@ export const Constants = {
     Enums: {
       link_type: ["property", "portal"],
       payment_status: ["pending", "paid", "failed"],
-      plan_type: ["free", "credits", "pro"],
+      plan_type: ["free", "credits", "pro", "premium"],
       property_status: ["ativo", "inativo"],
     },
   },
