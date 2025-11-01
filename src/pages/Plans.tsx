@@ -60,22 +60,45 @@ const Plans = () => {
       ],
       buttonText: "Começar Grátis",
       buttonVariant: "outline" as const,
-      popular: false
+      popular: false,
+      priceId: null
     },
     {
       name: "PRO",
       price: "R$ 37",
       period: "/mês",
       description: "Para corretores profissionais",
-      icon: Crown,
+      icon: Star,
       features: [
         "Até 15 imóveis cadastrados",
-        "Portal básico",
-        "WhatsApp integrado"
+        "Portal profissional",
+        "WhatsApp integrado",
+        "Suporte prioritário"
       ],
       buttonText: "Assinar Plano PRO",
       buttonVariant: "default" as const,
-      popular: true
+      popular: false,
+      priceId: "pro"
+    },
+    {
+      name: "PREMIUM",
+      price: "R$ 87,90",
+      period: "/mês",
+      description: "Solução completa com CRM",
+      icon: Crown,
+      features: [
+        "Tudo do PRO +",
+        "✨ CRM Completo",
+        "Gestão de Leads ilimitados",
+        "Pipeline de Negociações",
+        "Relatórios avançados",
+        "Lembretes e follow-ups",
+        "Exportação de dados"
+      ],
+      buttonText: "Assinar Plano PREMIUM",
+      buttonVariant: "default" as const,
+      popular: true,
+      priceId: "premium"
     }
   ];
 
@@ -98,7 +121,7 @@ const Plans = () => {
       {/* Plans Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan, index) => (
               <Card key={index} className={`relative text-center ${plan.popular ? 'border-primary shadow-strong scale-105' : ''}`}>
                 {plan.popular && (
@@ -138,7 +161,7 @@ const Plans = () => {
                     variant={plan.buttonVariant}
                     className={`w-full btn-animated ${plan.popular ? 'bg-gradient-primary hover:bg-primary-hover' : ''}`}
                     onClick={() => {
-                      if (plan.name === "PRO") {
+                      if (plan.name === "PRO" || plan.name === "PREMIUM") {
                         handleUpgrade();
                       } else {
                         navigate("/register");

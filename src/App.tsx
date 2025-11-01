@@ -24,6 +24,7 @@ import Resources from "./pages/Resources";
 import Demo from "./pages/Demo";
 import EmailTest from "./pages/EmailTest";
 import NotFound from "./pages/NotFound";
+import CRMDashboard from "./pages/crm/CRMDashboard";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/recursos" element={<Resources />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/test-email" element={<EmailTest />} />
+          <Route path="/crm" element={<CRMDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

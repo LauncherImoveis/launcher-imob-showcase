@@ -1,10 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, Building2 } from "lucide-react";
+import { Menu, X, Home, Building2, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    checkUserStatus();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      checkUserStatus();
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const checkUserStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      setIsLoggedIn(true);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan_type')
+        .eq('id', user.id)
+        .single();
+      
+      setIsPremium(profile?.plan_type === 'premium');
+    } else {
+      setIsLoggedIn(false);
+      setIsPremium(false);
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-border">
@@ -42,6 +75,15 @@ const Header = () => {
             >
               Planos
             </Link>
+            {isPremium && (
+              <Link
+                to="/crm"
+                className="flex items-center space-x-2 text-primary hover:text-primary-hover transition-colors font-medium"
+              >
+                <Users className="h-4 w-4" />
+                <span>CRM</span>
+              </Link>
+            )}
           </nav>
 
           {/* Auth Buttons */}
@@ -91,6 +133,16 @@ const Header = () => {
               >
                 Planos
               </Link>
+              {isPremium && (
+                <Link
+                  to="/crm"
+                  className="flex items-center space-x-2 text-primary hover:text-primary-hover transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Users className="h-4 w-4" />
+                  <span>CRM</span>
+                </Link>
+              )}
               <div className="flex flex-col space-y-2 pt-4">
                 <Button variant="ghost" asChild>
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>Entrar</Link>
