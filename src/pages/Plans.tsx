@@ -22,7 +22,7 @@ const Plans = () => {
     setIsLoggedIn(!!user);
   };
   
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (priceId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -31,7 +31,9 @@ const Plans = () => {
     }
     
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout');
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId }
+      });
       
       if (error) throw error;
       
@@ -78,7 +80,7 @@ const Plans = () => {
       buttonText: "Assinar Plano PRO",
       buttonVariant: "default" as const,
       popular: false,
-      priceId: "pro"
+      priceId: "price_1SNC3jAjOxaJay0QazKa1Thq"
     },
     {
       name: "PREMIUM",
@@ -98,7 +100,7 @@ const Plans = () => {
       buttonText: "Assinar Plano PREMIUM",
       buttonVariant: "default" as const,
       popular: true,
-      priceId: "premium"
+      priceId: "price_1SPRp1AjOxaJay0QGr1H5bdF"
     }
   ];
 
@@ -161,8 +163,8 @@ const Plans = () => {
                     variant={plan.buttonVariant}
                     className={`w-full btn-animated ${plan.popular ? 'bg-gradient-primary hover:bg-primary-hover' : ''}`}
                     onClick={() => {
-                      if (plan.name === "PRO" || plan.name === "PREMIUM") {
-                        handleUpgrade();
+                      if (plan.priceId) {
+                        handleUpgrade(plan.priceId);
                       } else {
                         navigate("/register");
                       }
