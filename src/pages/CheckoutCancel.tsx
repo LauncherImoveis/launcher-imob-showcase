@@ -49,10 +49,10 @@ const CheckoutCancel = () => {
           <div className="flex flex-col gap-2">
             <Button 
               className="w-full bg-gradient-primary hover:bg-primary-hover"
-              onClick={handleTryAgain}
+              onClick={() => navigate("/planos")}
             >
               <CreditCard className="h-4 w-4 mr-2" />
-              Tentar Novamente
+              Escolher Plano
             </Button>
             
             <Button 

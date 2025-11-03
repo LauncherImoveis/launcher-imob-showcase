@@ -165,7 +165,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Free Plan */}
             <Card className="p-8 text-center relative">
               <h3 className="text-2xl font-bold mb-4">Grátis</h3>
@@ -208,15 +208,40 @@ const Home = () => {
                 </li>
                 <li className="flex items-center justify-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
-                  <span>Portal básico</span>
+                  <span>Portal profissional</span>
                 </li>
                 <li className="flex items-center justify-center space-x-2">
                   <Check className="h-4 w-4 text-whatsapp" />
-                  <span>WhatsApp integrado</span>
+                  <span>Suporte prioritário</span>
                 </li>
               </ul>
               <Button className="w-full btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
                 <Link to="/planos">Assinar Plano PRO</Link>
+              </Button>
+            </Card>
+
+            {/* Premium Plan */}
+            <Card className="p-8 text-center relative">
+              <h3 className="text-2xl font-bold mb-4">PREMIUM</h3>
+              <div className="text-4xl font-bold text-primary mb-6">
+                R$ 87,90<span className="text-lg text-muted-foreground">/mês</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center justify-center space-x-2">
+                  <Check className="h-4 w-4 text-whatsapp" />
+                  <span>CRM completo</span>
+                </li>
+                <li className="flex items-center justify-center space-x-2">
+                  <Check className="h-4 w-4 text-whatsapp" />
+                  <span>Gestão de leads ilimitados</span>
+                </li>
+                <li className="flex items-center justify-center space-x-2">
+                  <Check className="h-4 w-4 text-whatsapp" />
+                  <span>Relatórios avançados</span>
+                </li>
+              </ul>
+              <Button className="w-full btn-animated" asChild>
+                <Link to="/planos">Assinar Plano PREMIUM</Link>
               </Button>
             </Card>
           </div>

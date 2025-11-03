@@ -323,11 +323,13 @@ const Subscription = () => {
               <div className="pt-4 flex gap-3">
                 {profile?.plan_type === 'free' ? (
                   <Button 
-                    onClick={handleUpgrade}
                     className="w-full bg-gradient-primary hover:bg-primary-hover"
+                    asChild
                   >
-                    Upgrade para PRO
-                    <ExternalLink className="ml-2 h-4 w-4" />
+                    <Link to="/planos">
+                      Escolher Plano
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 ) : (
                   <>
