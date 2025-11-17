@@ -88,12 +88,20 @@ const Header = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Entrar</Link>
-            </Button>
-            <Button className="btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
-              <Link to="/register">Criar Conta</Link>
-            </Button>
+            {isLoggedIn ? (
+              <Button className="btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Entrar</Link>
+                </Button>
+                <Button className="btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
+                  <Link to="/register">Criar Conta</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -144,12 +152,20 @@ const Header = () => {
                 </Link>
               )}
               <div className="flex flex-col space-y-2 pt-4">
-                <Button variant="ghost" asChild>
-                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>Entrar</Link>
-                </Button>
-                <Button className="btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
-                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>Criar Conta</Link>
-                </Button>
+                {isLoggedIn ? (
+                  <Button className="btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
+                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="ghost" asChild>
+                      <Link to="/login" onClick={() => setIsMenuOpen(false)}>Entrar</Link>
+                    </Button>
+                    <Button className="btn-animated bg-gradient-primary hover:bg-primary-hover" asChild>
+                      <Link to="/register" onClick={() => setIsMenuOpen(false)}>Criar Conta</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
