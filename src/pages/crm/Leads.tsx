@@ -1,25 +1,32 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { usePremiumCheck } from '@/hooks/usePremiumCheck';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { CRMLayout } from '@/components/crm/CRMLayout';
+import { LeadCard } from '@/components/crm/LeadCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Search, Phone, Mail, Calendar, User } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, Search, User, FileDown, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { LeadDialog } from '@/components/crm/LeadDialog';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { LEAD_ORIGINS, LEAD_STATUS } from '@/lib/formatters';
 
 interface Lead {
   id: string;
-  contact_name: string;
+  contact_name: string | null;
   contact_phone: string | null;
+  email: string | null;
+  origin: string | null;
+  status: string | null;
   message: string | null;
-  created_at: string;
+  created_at: string | null;
+  last_contact_at: string | null;
   property_id: string | null;
   properties?: {
     title: string;
@@ -27,19 +34,15 @@ interface Lead {
 }
 
 export default function Leads() {
-  const { isPremium, isLoading: checkingPremium } = usePremiumCheck();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const navigate = useNavigate();
+  const [originFilter, setOriginFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
-    if (isPremium) {
-      loadLeads();
-    }
-  }, [isPremium]);
+    loadLeads();
+  }, []);
 
   const loadLeads = async () => {
     try {
@@ -52,8 +55,12 @@ export default function Leads() {
           id,
           contact_name,
           contact_phone,
+          email,
+          origin,
+          status,
           message,
           created_at,
+          last_contact_at,
           property_id,
           properties (
             title
@@ -72,78 +79,100 @@ export default function Leads() {
     }
   };
 
-  const handleCreateLead = () => {
-    setSelectedLead(null);
-    setIsDialogOpen(true);
+  const handleLeadClick = (lead: Lead) => {
+    toast.info('Detalhes do lead - Em desenvolvimento');
+    // TODO: Abrir modal ou navegar para detalhes
   };
 
-  const handleEditLead = (lead: Lead) => {
-    setSelectedLead(lead);
-    setIsDialogOpen(true);
+  const handleImportCSV = () => {
+    toast.info('Importação CSV - Em desenvolvimento');
+    // TODO: Implementar importação CSV
   };
 
-  const handleDialogClose = (shouldRefresh?: boolean) => {
-    setIsDialogOpen(false);
-    setSelectedLead(null);
-    if (shouldRefresh) {
-      loadLeads();
-    }
+  const handleExport = () => {
+    toast.info('Exportação - Em desenvolvimento');
+    // TODO: Implementar exportação
   };
 
-  const filteredLeads = leads.filter(lead =>
-    lead.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.contact_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.message?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = 
+      lead.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.contact_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.message?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  if (checkingPremium) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-64" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+    const matchesOrigin = originFilter === 'all' || lead.origin === originFilter;
+    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
 
-  if (!isPremium) {
-    return null;
-  }
+    return matchesSearch && matchesOrigin && matchesStatus;
+  });
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <CRMLayout>
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Leads</h1>
-            <p className="text-muted-foreground">Gerencie seus contatos e oportunidades</p>
+            <p className="text-muted-foreground">
+              Gerencie seus contatos e oportunidades
+            </p>
           </div>
-          <Button onClick={handleCreateLead}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Lead
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleImportCSV}>
+              <FileUp className="mr-2 h-4 w-4" />
+              Importar CSV
+            </Button>
+            <Button variant="outline" onClick={handleExport}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar
+            </Button>
+            <Button onClick={() => toast.info('Novo lead - Em desenvolvimento')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Lead
+            </Button>
+          </div>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome, telefone ou mensagem..."
+              placeholder="Buscar por nome, telefone, email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
+
+          <Select value={originFilter} onValueChange={setOriginFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrar por origem" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as origens</SelectItem>
+              {Object.entries(LEAD_ORIGINS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrar por status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              {Object.entries(LEAD_STATUS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-48" />
+              <Skeleton key={i} className="h-64" />
             ))}
           </div>
         ) : filteredLeads.length === 0 ? (
@@ -152,12 +181,12 @@ export default function Leads() {
               <User className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">Nenhum lead encontrado</h3>
               <p className="text-muted-foreground text-center mb-4">
-                {searchTerm
+                {searchTerm || originFilter !== 'all' || statusFilter !== 'all'
                   ? 'Tente ajustar os filtros de busca'
                   : 'Comece criando seu primeiro lead ou aguarde contatos dos seus imóveis'}
               </p>
-              {!searchTerm && (
-                <Button onClick={handleCreateLead}>
+              {!searchTerm && originFilter === 'all' && statusFilter === 'all' && (
+                <Button onClick={() => toast.info('Novo lead - Em desenvolvimento')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Primeiro Lead
                 </Button>
@@ -167,52 +196,15 @@ export default function Leads() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredLeads.map((lead) => (
-              <Card
+              <LeadCard
                 key={lead.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => handleEditLead(lead)}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <User className="h-5 w-5 text-primary" />
-                    {lead.contact_name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {lead.contact_phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      {lead.contact_phone}
-                    </div>
-                  )}
-                  {lead.properties && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      Interesse: {lead.properties.title}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(lead.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                  </div>
-                  {lead.message && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-                      {lead.message}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                lead={lead}
+                onClick={handleLeadClick}
+              />
             ))}
           </div>
         )}
       </main>
-      <Footer />
-
-      <LeadDialog
-        open={isDialogOpen}
-        onClose={handleDialogClose}
-        lead={selectedLead}
-      />
-    </div>
+    </CRMLayout>
   );
 }

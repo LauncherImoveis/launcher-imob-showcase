@@ -246,6 +246,44 @@ export type Database = {
           },
         ]
       }
+      crm_settings: {
+        Row: {
+          commission_default_pct: number | null
+          created_at: string | null
+          id: string
+          notification_email: boolean | null
+          notification_in_app: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          commission_default_pct?: number | null
+          created_at?: string | null
+          id?: string
+          notification_email?: boolean | null
+          notification_in_app?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          commission_default_pct?: number | null
+          created_at?: string | null
+          id?: string
+          notification_email?: boolean | null
+          notification_in_app?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_stages: {
         Row: {
           color: string | null
@@ -349,27 +387,42 @@ export type Database = {
           contact_name: string | null
           contact_phone: string | null
           created_at: string | null
+          email: string | null
           id: string
+          interest: string | null
+          last_contact_at: string | null
           message: string | null
+          origin: string | null
           property_id: string | null
+          status: string | null
           user_id: string | null
         }
         Insert: {
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
+          interest?: string | null
+          last_contact_at?: string | null
           message?: string | null
+          origin?: string | null
           property_id?: string | null
+          status?: string | null
           user_id?: string | null
         }
         Update: {
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
+          interest?: string | null
+          last_contact_at?: string | null
           message?: string | null
+          origin?: string | null
           property_id?: string | null
+          status?: string | null
           user_id?: string | null
         }
         Relationships: [

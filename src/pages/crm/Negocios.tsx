@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { usePremiumCheck } from '@/hooks/usePremiumCheck';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { CRMLayout } from '@/components/crm/CRMLayout';
+import { DealCard } from '@/components/crm/DealCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, TrendingUp } from 'lucide-react';
+import { Plus, TrendingUp, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Stage {
@@ -24,21 +22,25 @@ interface Deal {
   stage_id: string | null;
   probability: number | null;
   expected_close_date: string | null;
-  created_at: string | null;
+  status: string | null;
+  lead_id: string | null;
+  property_id: string | null;
+  leads?: {
+    contact_name: string | null;
+  };
+  properties?: {
+    title: string;
+  };
 }
 
 export default function Negocios() {
-  const { isPremium, isLoading: checkingPremium } = usePremiumCheck();
   const [stages, setStages] = useState<Stage[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    if (isPremium) {
-      loadData();
-    }
-  }, [isPremium]);
+    loadData();
+  }, []);
 
   const loadData = async () => {
     try {
@@ -53,8 +55,25 @@ export default function Negocios() {
           .order('sort_order', { ascending: true }),
         supabase
           .from('crm_deals')
-          .select('*')
+          .select(`
+            id,
+            title,
+            value,
+            stage_id,
+            probability,
+            expected_close_date,
+            status,
+            lead_id,
+            property_id,
+            leads (
+              contact_name
+            ),
+            properties (
+              title
+            )
+          `)
           .eq('user_id', user.id)
+          .eq('status', 'open')
           .order('created_at', { ascending: false })
       ]);
 
@@ -64,8 +83,8 @@ export default function Negocios() {
       setStages(stagesData.data || []);
       setDeals(dealsData.data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados');
+      console.error('Erro ao carregar pipeline:', error);
+      toast.error('Erro ao carregar pipeline');
     } finally {
       setLoading(false);
     }
@@ -75,105 +94,130 @@ export default function Negocios() {
     return deals.filter(deal => deal.stage_id === stageId);
   };
 
-  const formatCurrency = (value: number | null) => {
-    if (!value) return 'R$ 0,00';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value / 100);
+  const handleDealClick = (deal: Deal) => {
+    toast.info('Detalhes da negociação - Em desenvolvimento');
+    // TODO: Abrir modal com detalhes, timeline, documentos
   };
 
-  if (checkingPremium) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-64" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const handleDragStart = (e: React.DragEvent, dealId: string) => {
+    e.dataTransfer.setData('dealId', dealId);
+  };
 
-  if (!isPremium) {
-    return null;
-  }
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, stageId: string) => {
+    e.preventDefault();
+    const dealId = e.dataTransfer.getData('dealId');
+    
+    try {
+      const { error } = await supabase
+        .from('crm_deals')
+        .update({ stage_id: stageId })
+        .eq('id', dealId);
+
+      if (error) throw error;
+
+      toast.success('Negociação movida com sucesso');
+      loadData();
+    } catch (error) {
+      console.error('Erro ao mover negociação:', error);
+      toast.error('Erro ao mover negociação');
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <CRMLayout>
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Pipeline de Negociações</h1>
-            <p className="text-muted-foreground">Gerencie seus negócios em andamento</p>
+            <p className="text-muted-foreground">
+              Gerencie seus negócios em andamento
+            </p>
           </div>
-          <Button onClick={() => toast.info('Funcionalidade em desenvolvimento')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Negociação
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => toast.info('Configurar pipeline - Em desenvolvimento')}>
+              <Settings className="mr-2 h-4 w-4" />
+              Configurar
+            </Button>
+            <Button onClick={() => toast.info('Nova negociação - Em desenvolvimento')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Negociação
+            </Button>
+          </div>
         </div>
 
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-64" />
+              <Skeleton key={i} className="h-96" />
             ))}
           </div>
         ) : stages.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Nenhum estágio configurado</h3>
-              <p className="text-muted-foreground text-center">
-                Configure os estágios do seu pipeline em Configurações
+              <h3 className="text-lg font-semibold mb-2">
+                Nenhum estágio configurado
+              </h3>
+              <p className="text-muted-foreground text-center mb-4">
+                Configure os estágios do seu pipeline para começar
               </p>
+              <Button onClick={() => toast.info('Configurar pipeline - Em desenvolvimento')}>
+                <Settings className="mr-2 h-4 w-4" />
+                Configurar Pipeline
+              </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 auto-rows-fr">
             {stages.map((stage) => (
-              <Card key={stage.id} className="flex flex-col">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: stage.color || '#6B7280' }}
-                    />
-                    {stage.name}
-                    <span className="ml-auto text-muted-foreground text-sm">
-                      {getDealsByStage(stage.id).length}
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-2">
-                  {getDealsByStage(stage.id).map((deal) => (
-                    <Card
-                      key={deal.id}
-                      className="p-3 cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => toast.info('Funcionalidade em desenvolvimento')}
-                    >
-                      <h4 className="font-semibold text-sm mb-1">{deal.title}</h4>
-                      {deal.value && (
-                        <p className="text-sm text-muted-foreground">
-                          {formatCurrency(deal.value)}
-                        </p>
-                      )}
-                      {deal.probability !== null && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Probabilidade: {deal.probability}%
-                        </p>
-                      )}
-                    </Card>
-                  ))}
-                </CardContent>
-              </Card>
+              <div
+                key={stage.id}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, stage.id)}
+                className="flex flex-col"
+              >
+                <Card className="flex flex-col h-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: stage.color || '#6B7280' }}
+                      />
+                      {stage.name}
+                      <span className="ml-auto text-muted-foreground text-sm">
+                        {getDealsByStage(stage.id).length}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-1 space-y-2 overflow-y-auto max-h-[600px]">
+                    {getDealsByStage(stage.id).map((deal) => (
+                      <div
+                        key={deal.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, deal.id)}
+                      >
+                        <DealCard
+                          deal={deal}
+                          onClick={handleDealClick}
+                        />
+                      </div>
+                    ))}
+                    {getDealsByStage(stage.id).length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Nenhuma negociação
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
         )}
       </main>
-      <Footer />
-    </div>
+    </CRMLayout>
   );
 }

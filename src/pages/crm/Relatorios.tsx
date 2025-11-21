@@ -1,39 +1,37 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePremiumCheck } from '@/hooks/usePremiumCheck';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { CRMLayout } from '@/components/crm/CRMLayout';
+import { StatCard } from '@/components/crm/CRMStats';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, TrendingUp, Users, DollarSign, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  BarChart3, TrendingUp, Users, DollarSign, 
+  Calendar, FileDown, PieChart 
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency, formatPercentage, LEAD_ORIGINS } from '@/lib/formatters';
 
 interface Stats {
   totalLeads: number;
   leadsThisMonth: number;
   activeDeals: number;
   wonDeals: number;
+  lostDeals: number;
   totalRevenue: number;
+  avgDealValue: number;
   conversionRate: number;
+  leadsByOrigin: Record<string, number>;
 }
 
 export default function Relatorios() {
-  const { isPremium, isLoading: checkingPremium } = usePremiumCheck();
-  const [stats, setStats] = useState<Stats>({
-    totalLeads: 0,
-    leadsThisMonth: 0,
-    activeDeals: 0,
-    wonDeals: 0,
-    totalRevenue: 0,
-    conversionRate: 0,
-  });
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isPremium) {
-      loadStats();
-    }
-  }, [isPremium]);
+    loadStats();
+  }, []);
 
   const loadStats = async () => {
     try {
@@ -43,7 +41,15 @@ export default function Relatorios() {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const [leadsData, leadsMonthData, dealsData, wonDealsData, transactionsData] = await Promise.all([
+      const [
+        leadsData,
+        leadsMonthData,
+        leadsOriginData,
+        activeDealsData,
+        wonDealsData,
+        lostDealsData,
+        transactionsData
+      ] = await Promise.all([
         supabase
           .from('leads')
           .select('id', { count: 'exact', head: true })
@@ -54,35 +60,64 @@ export default function Relatorios() {
           .eq('user_id', user.id)
           .gte('created_at', firstDayOfMonth),
         supabase
-          .from('crm_deals')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .in('status', ['active', 'negotiation']),
+          .from('leads')
+          .select('origin')
+          .eq('user_id', user.id),
         supabase
           .from('crm_deals')
           .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'open'),
+        supabase
+          .from('crm_deals')
+          .select('value')
           .eq('user_id', user.id)
           .eq('status', 'won'),
         supabase
+          .from('crm_deals')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'lost'),
+        supabase
           .from('crm_transactions')
-          .select('amount')
+          .select('amount, commission_amount')
           .eq('user_id', user.id)
       ]);
 
       const totalLeads = leadsData.count || 0;
       const leadsThisMonth = leadsMonthData.count || 0;
-      const activeDeals = dealsData.count || 0;
-      const wonDeals = wonDealsData.count || 0;
-      const totalRevenue = transactionsData.data?.reduce((sum, t) => sum + t.amount, 0) || 0;
+      const activeDeals = activeDealsData.count || 0;
+      const wonDeals = wonDealsData.data?.length || 0;
+      const lostDeals = lostDealsData.count || 0;
+
+      const totalRevenue = transactionsData.data?.reduce(
+        (sum, t) => sum + (t.commission_amount || t.amount), 0
+      ) || 0;
+
+      const totalDealValue = wonDealsData.data?.reduce(
+        (sum, d) => sum + (d.value || 0), 0
+      ) || 0;
+
+      const avgDealValue = wonDeals > 0 ? totalDealValue / wonDeals : 0;
       const conversionRate = totalLeads > 0 ? (wonDeals / totalLeads) * 100 : 0;
+
+      // Contar leads por origem
+      const leadsByOrigin: Record<string, number> = {};
+      leadsOriginData.data?.forEach(lead => {
+        const origin = lead.origin || 'outros';
+        leadsByOrigin[origin] = (leadsByOrigin[origin] || 0) + 1;
+      });
 
       setStats({
         totalLeads,
         leadsThisMonth,
         activeDeals,
         wonDeals,
+        lostDeals,
         totalRevenue,
+        avgDealValue,
         conversionRate,
+        leadsByOrigin
       });
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
@@ -92,142 +127,136 @@ export default function Relatorios() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value / 100);
+  const handleExport = (format: 'csv' | 'pdf') => {
+    toast.info(`Exportar para ${format.toUpperCase()} - Em desenvolvimento`);
+    // TODO: Implementar exportação
   };
 
-  if (checkingPremium) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-64" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!isPremium) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <CRMLayout>
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Relatórios e Análises</h1>
-          <p className="text-muted-foreground">Acompanhe o desempenho das suas vendas</p>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Relatórios e Análises</h1>
+            <p className="text-muted-foreground">
+              Acompanhe o desempenho das suas vendas
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => handleExport('csv')}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Button variant="outline" onClick={() => handleExport('pdf')}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar PDF
+            </Button>
+          </div>
         </div>
 
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              <StatCard
+                title="Total de Leads"
+                value={stats?.totalLeads || 0}
+                subtitle={`${stats?.leadsThisMonth || 0} neste mês`}
+                icon={Users}
+              />
+
+              <StatCard
+                title="Negociações Ativas"
+                value={stats?.activeDeals || 0}
+                subtitle="Em andamento"
+                icon={TrendingUp}
+              />
+
+              <StatCard
+                title="Negócios Fechados"
+                value={stats?.wonDeals || 0}
+                subtitle={`${stats?.lostDeals || 0} perdidos`}
+                icon={BarChart3}
+              />
+
+              <StatCard
+                title="Taxa de Conversão"
+                value={formatPercentage(stats?.conversionRate || 0)}
+                subtitle="Leads → Vendas"
+                icon={TrendingUp}
+              />
+
+              <StatCard
+                title="Receita Total"
+                value={formatCurrency(stats?.totalRevenue || 0)}
+                subtitle="Comissões realizadas"
+                icon={DollarSign}
+              />
+
+              <StatCard
+                title="Ticket Médio"
+                value={formatCurrency(stats?.avgDealValue || 0)}
+                subtitle="Valor médio por venda"
+                icon={DollarSign}
+              />
+
+              <StatCard
+                title="Período"
+                value="Todos"
+                subtitle="Desde o início"
+                icon={Calendar}
+              />
+
+              <StatCard
+                title="Funil"
+                value="Ver"
+                subtitle="Análise do funil"
+                icon={PieChart}
+              />
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 mb-8">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle>Leads por Origem</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalLeads}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.leadsThisMonth} neste mês
-                  </p>
+                <CardContent className="space-y-4">
+                  {Object.entries(stats?.leadsByOrigin || {}).map(([origin, count]) => (
+                    <div key={origin} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {LEAD_ORIGINS[origin as keyof typeof LEAD_ORIGINS] || origin}
+                      </span>
+                      <Badge>{count}</Badge>
+                    </div>
+                  ))}
+                  {Object.keys(stats?.leadsByOrigin || {}).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum lead registrado ainda
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Negociações Ativas</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle>Gráficos Detalhados</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.activeDeals}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Em andamento
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Negócios Fechados</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.wonDeals}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Total de vendas
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Transações realizadas
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.conversionRate.toFixed(1)}%</div>
-                  <p className="text-xs text-muted-foreground">
-                    De leads para vendas
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Período</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">Todos</div>
-                  <p className="text-xs text-muted-foreground">
-                    Desde o início
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground text-center">
+                    Gráficos interativos em desenvolvimento
                   </p>
                 </CardContent>
               </Card>
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Gráficos e Análises Detalhadas</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground text-center">
-                  Gráficos e análises detalhadas em desenvolvimento
-                </p>
-              </CardContent>
-            </Card>
           </>
         )}
       </main>
-      <Footer />
-    </div>
+    </CRMLayout>
   );
 }
