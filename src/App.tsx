@@ -26,6 +26,9 @@ import EmailTest from "./pages/EmailTest";
 import NotFound from "./pages/NotFound";
 import CRMDashboard from "./pages/crm/CRMDashboard";
 import Leads from "./pages/crm/Leads";
+import Negocios from "./pages/crm/Negocios";
+import Imoveis from "./pages/crm/Imoveis";
+import Relatorios from "./pages/crm/Relatorios";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +61,9 @@ const App = () => (
           <Route path="/test-email" element={<EmailTest />} />
           <Route path="/crm" element={<CRMDashboard />} />
           <Route path="/crm/leads" element={<Leads />} />
+          <Route path="/crm/negocios" element={<Negocios />} />
+          <Route path="/crm/imoveis" element={<Imoveis />} />
+          <Route path="/crm/relatorios" element={<Relatorios />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
