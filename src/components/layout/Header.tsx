@@ -32,7 +32,7 @@ const Header = () => {
         .eq('id', user.id)
         .single();
       
-      setIsPremium(profile?.plan_type === 'premium' || profile?.plan_type === 'pro');
+      setIsPremium(profile?.plan_type === 'premium');
     } else {
       setIsLoggedIn(false);
       setIsPremium(false);

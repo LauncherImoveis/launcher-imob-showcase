@@ -1,34 +1,37 @@
-import { useEffect, useState } from 'react';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { usePremiumCheck } from '@/hooks/usePremiumCheck';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { CRMLayout } from '@/components/crm/CRMLayout';
+import { StatCard } from '@/components/crm/CRMStats';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, TrendingUp, DollarSign, Calendar, Building2, Tag, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { 
+  Users, TrendingUp, DollarSign, Calendar, 
+  Activity, BarChart3, Building2, FileText 
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { formatCurrency, formatPercentage } from '@/lib/formatters';
 
 interface DashboardStats {
   totalLeads: number;
   leadsThisMonth: number;
   activeDeals: number;
-  conversionRate: number;
+  wonDeals: number;
+  totalRevenue: number;
   estimatedRevenue: number;
+  conversionRate: number;
   pendingReminders: number;
 }
 
 export default function CRMDashboard() {
-  const { isPremium, isLoading: premiumLoading } = usePremiumCheck();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isPremium) {
-      loadDashboardData();
-    }
-  }, [isPremium]);
+    loadDashboardData();
+  }, []);
 
   const loadDashboardData = async () => {
     try {
@@ -36,192 +39,169 @@ export default function CRMDashboard() {
       if (!user) return;
 
       const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      // Total leads
-      const { count: totalLeads } = await supabase
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      const [
+        leadsData,
+        leadsMonthData,
+        activeDealsData,
+        wonDealsData,
+        transactionsData,
+        estimatedDealsData,
+        remindersData
+      ] = await Promise.all([
+        supabase
+          .from('leads')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('leads')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('created_at', firstDayOfMonth),
+        supabase
+          .from('crm_deals')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'open'),
+        supabase
+          .from('crm_deals')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'won'),
+        supabase
+          .from('crm_transactions')
+          .select('amount, commission_amount')
+          .eq('user_id', user.id),
+        supabase
+          .from('crm_deals')
+          .select('value, probability')
+          .eq('user_id', user.id)
+          .eq('status', 'open'),
+        supabase
+          .from('crm_reminders')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_done', false)
+          .lte('remind_at', now.toISOString())
+      ]);
 
-      // Leads this month
-      const { count: leadsThisMonth } = await supabase
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('created_at', startOfMonth.toISOString());
+      const totalLeads = leadsData.count || 0;
+      const leadsThisMonth = leadsMonthData.count || 0;
+      const activeDeals = activeDealsData.count || 0;
+      const wonDeals = wonDealsData.count || 0;
+      const pendingReminders = remindersData.count || 0;
 
-      // Active deals
-      const { count: activeDeals } = await supabase
-        .from('crm_deals')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'open');
-
-      // Won deals for conversion
-      const { count: wonDeals } = await supabase
-        .from('crm_deals')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'won');
-
-      // Estimated revenue from active deals
-      const { data: deals } = await supabase
-        .from('crm_deals')
-        .select('value, probability')
-        .eq('user_id', user.id)
-        .eq('status', 'open');
-
-      const estimatedRevenue = deals?.reduce((sum, deal) => 
-        sum + (deal.value || 0) * (deal.probability || 0) / 100, 0
+      const totalRevenue = transactionsData.data?.reduce(
+        (sum, t) => sum + (t.commission_amount || t.amount), 0
       ) || 0;
 
-      // Pending reminders
-      const { count: pendingReminders } = await supabase
-        .from('crm_reminders')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_done', false)
-        .lte('remind_at', new Date().toISOString());
+      const estimatedRevenue = estimatedDealsData.data?.reduce(
+        (sum, d) => sum + ((d.value || 0) * (d.probability || 0) / 100), 0
+      ) || 0;
 
-      const conversionRate = totalLeads && wonDeals 
-        ? ((wonDeals / totalLeads) * 100) 
-        : 0;
+      const conversionRate = totalLeads > 0 ? (wonDeals / totalLeads) * 100 : 0;
 
       setStats({
-        totalLeads: totalLeads || 0,
-        leadsThisMonth: leadsThisMonth || 0,
-        activeDeals: activeDeals || 0,
-        conversionRate: Math.round(conversionRate * 10) / 10,
-        estimatedRevenue: estimatedRevenue / 100, // Convert from cents
-        pendingReminders: pendingReminders || 0,
+        totalLeads,
+        leadsThisMonth,
+        activeDeals,
+        wonDeals,
+        totalRevenue,
+        estimatedRevenue,
+        conversionRate,
+        pendingReminders
       });
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
+      console.error('Erro ao carregar dashboard:', error);
+      toast.error('Erro ao carregar dados do dashboard');
     } finally {
       setLoading(false);
     }
   };
 
-  if (premiumLoading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <Skeleton className="h-64 w-full" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!isPremium) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      
+    <CRMLayout>
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">CRM Dashboard</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Visão Geral do CRM</h1>
           <p className="text-muted-foreground">
-            Gerencie seus leads, negociações e acompanhe suas métricas
+            Acompanhe suas métricas e gerencie seu funil de vendas
           </p>
         </div>
 
         {loading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalLeads}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +{stats?.leadsThisMonth} este mês
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              <StatCard
+                title="Total de Leads"
+                value={stats?.totalLeads || 0}
+                subtitle={`${stats?.leadsThisMonth || 0} neste mês`}
+                icon={Users}
+                onClick={() => navigate('/crm/leads')}
+              />
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Negociações Ativas</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.activeDeals}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Em andamento
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Negociações Ativas"
+                value={stats?.activeDeals || 0}
+                subtitle="Em andamento"
+                icon={TrendingUp}
+                onClick={() => navigate('/crm/negocios')}
+              />
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-                  <Tag className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.conversionRate}%</div>
-                  <p className="text-xs text-muted-foreground">
-                    Leads convertidos em vendas
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Negócios Fechados"
+                value={stats?.wonDeals || 0}
+                subtitle="Total de vendas"
+                icon={BarChart3}
+                onClick={() => navigate('/crm/negocios')}
+              />
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Receita Estimada</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    R$ {stats?.estimatedRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    De negociações ativas
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Taxa de Conversão"
+                value={formatPercentage(stats?.conversionRate || 0)}
+                subtitle="Leads → Vendas"
+                icon={TrendingUp}
+              />
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Lembretes Pendentes</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.pendingReminders}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Requerem atenção
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Receita Total"
+                value={formatCurrency(stats?.totalRevenue || 0)}
+                subtitle="Comissões realizadas"
+                icon={DollarSign}
+                onClick={() => navigate('/crm/relatorios')}
+              />
 
-              <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/crm/atividades')}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Últimas Atividades</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">Ver</div>
-                  <p className="text-xs text-muted-foreground">
-                    Histórico completo
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Receita Estimada"
+                value={formatCurrency(stats?.estimatedRevenue || 0)}
+                subtitle="Deals em andamento"
+                icon={DollarSign}
+              />
+
+              <StatCard
+                title="Lembretes Pendentes"
+                value={stats?.pendingReminders || 0}
+                subtitle="Requerem atenção"
+                icon={Calendar}
+              />
+
+              <StatCard
+                title="Últimas Atividades"
+                value="Ver"
+                subtitle="Histórico completo"
+                icon={Activity}
+                onClick={() => navigate('/crm/atividades')}
+              />
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <Users className="h-8 w-8 mb-2 text-primary" />
@@ -263,7 +243,7 @@ export default function CRMDashboard() {
 
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <DollarSign className="h-8 w-8 mb-2 text-primary" />
+                  <FileText className="h-8 w-8 mb-2 text-primary" />
                   <CardTitle>Relatórios</CardTitle>
                   <CardDescription>Análises e exportação</CardDescription>
                 </CardHeader>
@@ -277,8 +257,6 @@ export default function CRMDashboard() {
           </>
         )}
       </main>
-
-      <Footer />
-    </div>
+    </CRMLayout>
   );
 }

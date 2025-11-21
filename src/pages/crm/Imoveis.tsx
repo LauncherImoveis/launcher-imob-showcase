@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { usePremiumCheck } from '@/hooks/usePremiumCheck';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { CRMLayout } from '@/components/crm/CRMLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Search, Building2, Eye, Edit } from 'lucide-react';
+import { Search, Building2, Eye, Edit, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/formatters';
 
 interface Property {
   id: string;
@@ -23,34 +22,51 @@ interface Property {
   area_m2: number | null;
   is_active: boolean | null;
   created_at: string | null;
+  _count?: {
+    leads: number;
+  };
 }
 
 export default function Imoveis() {
-  const { isPremium, isLoading: checkingPremium } = usePremiumCheck();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isPremium) {
-      loadProperties();
-    }
-  }, [isPremium]);
+    loadProperties();
+  }, []);
 
   const loadProperties = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      // Buscar imóveis
+      const { data: propertiesData, error: propsError } = await supabase
         .from('properties')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setProperties(data || []);
+      if (propsError) throw propsError;
+
+      // Buscar contagem de leads por imóvel
+      const propertiesWithLeads = await Promise.all(
+        (propertiesData || []).map(async (property) => {
+          const { count } = await supabase
+            .from('leads')
+            .select('*', { count: 'exact', head: true })
+            .eq('property_id', property.id);
+
+          return {
+            ...property,
+            _count: { leads: count || 0 }
+          };
+        })
+      );
+
+      setProperties(propertiesWithLeads);
     } catch (error) {
       console.error('Erro ao carregar imóveis:', error);
       toast.error('Erro ao carregar imóveis');
@@ -65,38 +81,15 @@ export default function Imoveis() {
     property.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  if (checkingPremium) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-64" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!isPremium) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <CRMLayout>
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Imóveis CRM</h1>
-            <p className="text-muted-foreground">Visão de leads por imóvel</p>
+            <p className="text-muted-foreground">
+              Visão de leads por imóvel
+            </p>
           </div>
           <Button onClick={() => navigate('/dashboard/new')}>
             <Building2 className="mr-2 h-4 w-4" />
@@ -126,7 +119,9 @@ export default function Imoveis() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Nenhum imóvel encontrado</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Nenhum imóvel encontrado
+              </h3>
               <p className="text-muted-foreground text-center mb-4">
                 {searchTerm
                   ? 'Tente ajustar os filtros de busca'
@@ -145,7 +140,7 @@ export default function Imoveis() {
             {filteredProperties.map((property) => (
               <Card
                 key={property.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className="hover:shadow-lg transition-shadow"
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -159,26 +154,33 @@ export default function Imoveis() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(property.price)}
+                    {formatCurrency(property.price * 100)}
                   </p>
+                  
                   <p className="text-sm text-muted-foreground">
                     {property.address}
                     {property.neighborhood && `, ${property.neighborhood}`}
                   </p>
+                  
                   <div className="flex gap-3 text-sm text-muted-foreground">
                     {property.bedrooms && <span>{property.bedrooms} quartos</span>}
                     {property.bathrooms && <span>{property.bathrooms} banheiros</span>}
                     {property.area_m2 && <span>{property.area_m2}m²</span>}
                   </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="font-semibold">
+                      {property._count?.leads || 0} leads
+                    </span>
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/dashboard/edit/${property.id}`);
-                      }}
+                      onClick={() => navigate(`/dashboard/edit/${property.id}`)}
                     >
                       <Edit className="mr-1 h-3 w-3" />
                       Editar
@@ -187,13 +189,10 @@ export default function Imoveis() {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toast.info('Ver leads deste imóvel - Em desenvolvimento');
-                      }}
+                      onClick={() => toast.info('Ver leads deste imóvel - Em desenvolvimento')}
                     >
                       <Eye className="mr-1 h-3 w-3" />
-                      Leads
+                      Ver Leads
                     </Button>
                   </div>
                 </CardContent>
@@ -202,7 +201,6 @@ export default function Imoveis() {
           </div>
         )}
       </main>
-      <Footer />
-    </div>
+    </CRMLayout>
   );
 }

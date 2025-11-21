@@ -302,7 +302,7 @@ const Dashboard = () => {
 
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">Plano: {getPlanLabel()}</span>
-              {(profile?.plan_type === "pro" || profile?.plan_type === "premium") && (
+              {profile?.plan_type === "premium" && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/crm" className="flex items-center space-x-1">
                     <Users className="h-4 w-4" />
