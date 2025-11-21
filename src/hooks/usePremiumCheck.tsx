@@ -29,11 +29,11 @@ export const usePremiumCheck = () => {
 
       if (error) throw error;
 
-      const premium = profile?.plan_type === 'premium';
+      const premium = profile?.plan_type === 'premium' || profile?.plan_type === 'pro';
       setIsPremium(premium);
 
       if (!premium) {
-        toast.error('Este recurso é exclusivo do Plano Premium');
+        toast.error('Este recurso é exclusivo dos Planos Pro e Premium');
         navigate('/planos');
       }
     } catch (error) {
