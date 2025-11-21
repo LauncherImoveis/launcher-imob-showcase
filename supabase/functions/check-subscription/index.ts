@@ -94,15 +94,29 @@ serve(async (req) => {
       productId = subscription.items.data[0].price.product;
       logStep("Determined subscription tier", { productId });
       
-      // Update profile to pro plan
+      // Determine plan type based on product ID
+      // Pro: prod_TJpj1YJB2Gnu1c
+      // Premium: prod_TMA9LeYLZRSsSU
+      let planType = 'pro';
+      if (typeof productId === 'string') {
+        if (productId === 'prod_TMA9LeYLZRSsSU') {
+          planType = 'premium';
+        } else if (productId === 'prod_TJpj1YJB2Gnu1c') {
+          planType = 'pro';
+        }
+      }
+      
+      logStep("Updating profile plan", { planType, productId });
+      
+      // Update profile with determined plan
       await supabaseClient
         .from('profiles')
-        .update({ plan_type: 'pro' })
+        .update({ plan_type: planType })
         .eq('id', user.id);
       
       return new Response(JSON.stringify({
         subscribed: true,
-        plan_type: 'pro',
+        plan_type: planType,
         product_id: productId,
         subscription_end: subscriptionEnd
       }), {
